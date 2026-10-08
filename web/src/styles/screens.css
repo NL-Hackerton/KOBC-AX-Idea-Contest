@@ -230,3 +230,7 @@ tr.faint td { color: var(--ink-3); }
 @media (max-width: 600px) {
   .panel { min-width: 0; overflow-x: auto; }
 }
+/* WebKit: select 안의 긴 옵션 글자 폭이 바깥으로 새어 페이지 폭을 늘린다 (포커스 링은 잘리지 않음) */
+select { overflow: hidden; }
+.toolbar.picker .grow select, .stack select { width: 100%; min-width: 0; }
+.toolbar.picker label { min-width: 0; max-width: 100%; }
