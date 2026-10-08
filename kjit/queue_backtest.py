@@ -31,7 +31,6 @@ CALIB_START = pd.Timestamp("2026-06-01", tz="Asia/Seoul")
 TEST_START = pd.Timestamp("2026-08-01", tz="Asia/Seoul")
 N_SAMPLES = 400
 U_KNOTS = np.array([0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0])
-RNG = np.random.default_rng(0)
 EPOCH = pd.Timestamp("2025-01-01", tz="Asia/Seoul")
 
 
@@ -61,7 +60,9 @@ def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info
     """결정 시각 tau 에서 S가 쓸 선석이 비는 시각 F 의 표본 (len(S), N_SAMPLES).
 
     info="plan": 앞 순번 선박과 도착 예정을 선석계획으로 안다고 가정
-    info="observed": tau 까지 입항한 선박만 대기열에 넣는다 (보수적)
+    info="lineup": tau 까지 입항한 선박만 넣는다. 정박지 대기 선박의 목적 선석과 순번(대리점·터미널 line-up)은 안다고 본다
+    info="public": tau 에 그 선석에 접안 중인 선박만 넣는다. 공개 입출항 신고만으로 알 수 있는 조건이다
+    모든 조건에서 S 자신이 쓸 선석(터미널 지정)은 안다고 가정한다.
     """
     members = []
     by_berth = {b: g for b, g in occ.groupby("out_berth")}
@@ -70,8 +71,10 @@ def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info
         if g is None:
             continue
         chain = g[(g["out_time"] > r["tau"]) & (g["out_time"] <= r["pred_out"])]
-        if info == "observed":
+        if info == "lineup":
             chain = chain[chain["in_time"] <= r["tau"]]
+        elif info == "public":
+            chain = chain[chain["start"] <= r["tau"]]
         for k, (occ_id, c) in enumerate(chain.iterrows()):
             members.append({"s_id": si, "pos": k, "occ_id": occ_id, "t": r["tau"],
                             "started": c["start"] <= r["tau"], "arr": max(c["in_time"], r["tau"])})
@@ -86,7 +89,8 @@ def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info
     feats.loc[~M["started"].to_numpy(), "elapsed_h"] = 0.0
     q = predict_quantiles(bundle, feats)
     qmat = np.column_stack([q[k] for k in sorted(q)])
-    dur = inv_cdf(qmat, RNG.uniform(size=(len(M), N_SAMPLES)))  # 접안 중이면 잔여, 아니면 전체 체류 [h]
+    rng = np.random.default_rng(0)  # 조건·순서와 무관하게 같은 표본을 쓰도록 호출마다 고정
+    dur = inv_cdf(qmat, rng.uniform(size=(len(M), N_SAMPLES)))  # 접안 중이면 잔여, 아니면 전체 체류 [h]
     arr_h = hours(pd.to_datetime(M["arr"]))
     for si, g in M.groupby("s_id", sort=False):
         t_free = np.full(N_SAMPLES, tau_s[si])
@@ -143,7 +147,7 @@ def main() -> None:
     rows = [dict(정보="-", 보정="-", **run("현행 (원래대로 도착)", A0)), dict(정보="-", 보정="-", **run("완전 정보 (상한)", F_true))]
     out_cases = S.copy()
     calib_info = {}
-    for info, label in [("plan", "선석계획 공유"), ("observed", "입항 선박만 관측")]:
+    for info, label in [("public", "공개 데이터만"), ("lineup", "대기 순번 공유"), ("plan", "선석계획 공유")]:
         # 보정 구간 PIT 로 예측 분포를 재보정한다: 수준 a 의 결정 분위수 = PIT_cal 의 a 분위수
         # 결정 시각에 선석이 이미 비어 있던 항차는 예측이 한 점(tau)이라 보정·적중률 계산에서 뺀다
         F_cal, _ = simulate(S_cal, occ, queue, bundle, info)
