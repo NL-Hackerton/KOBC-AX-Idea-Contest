@@ -11,12 +11,13 @@ export interface AppState {
   risk: Risk
   revealed: boolean
   port: string
+  liveShipId: string | null
 }
 
 export type Action =
   | { type: 'nav'; screen: Screen }
   | { type: 'openReplay'; id: string }
-  | { type: 'openLive'; port?: string }
+  | { type: 'openLive'; port?: string; shipId?: string | null }
   | { type: 'mode'; mode: 'replay' | 'live' }
   | { type: 'condition'; condition: Condition }
   | { type: 'risk'; risk: Risk }
@@ -40,7 +41,7 @@ function reducer(s: AppState, a: Action): AppState {
     case 'openReplay':
       return { ...s, screen: 'decision', mode: 'replay', caseId: a.id, revealed: false }
     case 'openLive':
-      return { ...s, screen: 'decision', mode: 'live', port: a.port ?? s.port }
+      return { ...s, screen: 'decision', mode: 'live', port: a.port ?? s.port, liveShipId: a.shipId ?? null }
     case 'mode':
       return { ...s, mode: a.mode }
     case 'condition':

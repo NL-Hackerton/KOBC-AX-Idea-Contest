@@ -19,6 +19,7 @@ export default function App() {
     risk: '0.1',
     revealed: false,
     port: '울산',
+    liveShipId: null,
   })
   return (
     <div className="app">

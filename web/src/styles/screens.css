@@ -123,3 +123,34 @@ main { padding-top: 16px; min-height: 60vh; }
 .k-range { background: rgba(194,24,123,.08); border-left: 1px solid var(--ink-3); border-right: 1px solid #b9c6cd; }
 .k-rta { border-left: 2px solid var(--rta); width: 2px !important; height: 12px !important; margin: 0 6px; }
 .k-actual { border-left: 2px solid var(--ink); width: 2px !important; height: 12px !important; margin: 0 6px; }
+
+.at-pick { display: flex; align-items: center; gap: 6px; }
+.at-pick input { padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); }
+.summary-strip { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin: 6px 0 12px; }
+.summary-strip strong { font-size: 22px; margin-right: 4px; }
+.two-col { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; margin-top: 12px; }
+.table-scroll { max-height: 420px; overflow: auto; }
+.board svg, .map svg { display: block; }
+.board .grid { stroke: var(--grid); }
+.board .now { stroke: var(--ink-2); stroke-width: 1.5; }
+.board .axis { fill: var(--ink-3); font-size: 11px; }
+.board .row-label { font-size: 12px; fill: var(--ink-2); }
+.board .empty { font-size: 11px; fill: var(--ink-3); }
+.board .occ { fill: #9fb0bb; }
+.board .pred-range { fill: var(--band); opacity: 0.3; }
+.board .pred-med { stroke: var(--band); stroke-width: 2; }
+.board .declared { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
+.board .actual { fill: var(--ink); }
+.board .occ-label { font-size: 11px; fill: var(--ink); }
+.k-occ { background: #9fb0bb; border-radius: 2px; }
+.k-dot-decl { width: 8px !important; height: 8px !important; border-radius: 50%; border: 1.5px solid var(--ink-2); }
+.k-dot-act { width: 8px !important; height: 8px !important; border-radius: 50%; background: var(--ink); }
+.k-dot-ink { width: 8px !important; height: 8px !important; border-radius: 50%; background: var(--ink); }
+.k-dot-wait { width: 8px !important; height: 8px !important; border-radius: 50%; background: var(--wait); }
+.k-dot-other { width: 6px !important; height: 6px !important; border-radius: 50%; background: #b9c6cd; }
+.map .ship.berthed { fill: var(--ink); stroke: #fff; stroke-width: 1.5; }
+.map .ship.waiting { fill: var(--wait); stroke: #fff; stroke-width: 1.5; }
+.map .ship.other { fill: #b9c6cd; }
+.map .ship.moving { fill: #8fb5e3; }
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+.table-scroll .data-table td, .table-scroll .data-table th { white-space: nowrap; text-align: left; }

@@ -174,11 +174,12 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
     setPs(null)
     getPortState(port).then((s) => {
       setPs(s)
-      const first = s?.inbound.find((i) => i.targetKey)
+      const want = s?.inbound.find((i) => i.id === state.liveShipId && i.targetKey)
+      const first = want ?? s?.inbound.find((i) => i.targetKey)
       if (first) choose(first, s!)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [port])
+  }, [port, state.liveShipId])
 
   const berthName = (key: string | null, s: PortState) => s.singleBerths.find((b) => b.key === key)?.name ?? ''
   function choose(i: Inbound, s: PortState) {
