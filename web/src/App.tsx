@@ -20,6 +20,9 @@ export default function App() {
     revealed: false,
     port: '울산',
     liveShipId: null,
+    agentTab: 'contract',
+    current: null,
+    handoff: null,
   })
   return (
     <div className="app">
@@ -49,7 +52,7 @@ export default function App() {
           {state.screen === 'simulate' && <Simulate />}
           {state.screen === 'evidence' && <Evidence />}
           {state.screen === 'cii' && <Cii />}
-          {state.screen === 'agent' && <Agent />}
+          {state.screen === 'agent' && <Agent state={state} dispatch={dispatch} />}
         </Suspense>
       </main>
       <footer className="foot small muted">

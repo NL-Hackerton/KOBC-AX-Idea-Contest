@@ -157,3 +157,37 @@ export async function getEvidence<T>(): Promise<T | null> {
 export async function getCiiConstants<T>(): Promise<T | null> {
   return read<T | null>('/api/cii/constants', () => (S.cii_constants as T) ?? null)
 }
+
+// ---- 에이전트 ----
+import type { AgentExamples } from './types'
+
+export function agentExamples(): AgentExamples | null {
+  return (S.agent_examples as AgentExamples) ?? null
+}
+
+/** 에이전트 호출. LLM 응답은 길게 걸릴 수 있어 90초까지 기다린다. 서버가 없으면 error 를 돌려준다. */
+export async function postAgent<T>(kind: 'contract' | 'lineup' | 'explain' | 'draft' | 'chat', body: unknown): Promise<T | { error: string }> {
+  if (!BASE) return { error: 'no-server' }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 90000)
+  try {
+    const res = await fetch(`${BASE}/api/agent/${kind}`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      const d = data.detail
+      return { error: typeof d === 'string' ? d : `요청을 처리하지 못했습니다 (${res.status})` }
+    }
+    setMode('live')
+    return data as T
+  } catch {
+    setMode('snapshot')
+    return { error: 'no-server' }
+  } finally {
+    clearTimeout(timer)
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { Policy, Risk } from '../types'
+import type { DecisionSummary, Policy, Risk } from '../types'
+import AgentNote from './AgentNote'
 import { fmtDT } from '../lib/time'
 
 interface Props {
@@ -8,15 +9,14 @@ interface Props {
   a0: string
   designSpeedKn: number
   busy: boolean
-  vessel: string
-  berth: string
   replay: boolean
+  summary: DecisionSummary
+  exampleKey: string | null
 }
 
-export default function RecommendationCard({ policies, risk, a0, designSpeedKn, busy, vessel, berth, replay }: Props) {
+export default function RecommendationCard({ policies, risk, a0, designSpeedKn, busy, replay, summary, exampleKey }: Props) {
   const p = policies[risk]
   const [open, setOpen] = useState(false)
-  const [note, setNote] = useState<'ko' | 'en' | null>(null)
   const keep = !busy || p.delayH < 0.05
   return (
     <section className="panel rec" aria-label="권고">
@@ -24,7 +24,7 @@ export default function RecommendationCard({ policies, risk, a0, designSpeedKn, 
       {keep ? (
         <>
           <p className="rec-time num">{fmtDT(a0)}</p>
-          <p className="muted">원래 일정대로 도착합니다. {busy ? '이 위험 수준에서는 늦출 근거가 부족합니다.' : '결정 시각에 선석이 비어 있습니다.'}</p>
+          <p className="muted">원래 일정대로 도착합니다. {busy ? '이 위험 수준에서는 늦출 근거가 부족합니다.' : '이 정보 조건에서는 선석을 쓰거나 기다리는 앞 순번 배가 보이지 않습니다.'}</p>
         </>
       ) : (
         <>
@@ -89,26 +89,7 @@ export default function RecommendationCard({ policies, risk, a0, designSpeedKn, 
         </table>
       )}
 
-      {!keep && (
-        <div className="note-actions">
-          <button className="btn" onClick={() => setNote(note === 'ko' ? null : 'ko')}>
-            선장 지시문 보기
-          </button>
-          <button className="btn" onClick={() => setNote(note === 'en' ? null : 'en')}>
-            Master's instruction
-          </button>
-        </div>
-      )}
-      {note && !keep && (
-        <div className="note">
-          <p className="small muted">템플릿 자동 생성</p>
-          <pre>
-            {note === 'ko'
-              ? `선장님께\n\n${vessel} 의 ${berth} 접안 대기를 줄이기 위해 도착 시각을 조정해 주십시오.\n- 권고 도착: ${fmtDT(p.rta)} (원래 ${fmtDT(a0)}, ${p.delayH.toFixed(1)}시간 늦춤)\n- 권고 속도: ${p.speedKn.toFixed(1)}노트\n- 근거: 선석 가용 시각 예측 분포 (K-JIT, 위험 수준 ${risk})\n안전 운항 범위를 벗어나는 경우 즉시 회신 바랍니다.`
-              : `To the Master,\n\nPlease adjust the arrival of ${vessel} to reduce anchorage waiting at ${berth}.\n- Required time of arrival: ${fmtDT(p.rta)} KST (originally ${fmtDT(a0)}, +${p.delayH.toFixed(1)} h)\n- Recommended speed: ${p.speedKn.toFixed(1)} kn\n- Basis: berth availability forecast (K-JIT, risk level ${risk})\nAdvise immediately if this is outside safe operating limits.`}
-          </pre>
-        </div>
-      )}
+      <AgentNote summary={summary} exampleKey={exampleKey} showDrafts={!keep} />
     </section>
   )
 }

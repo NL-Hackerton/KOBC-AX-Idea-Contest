@@ -137,3 +137,89 @@ export interface PortInfo {
   name: string
   berths: { key: string; name: string }[]
 }
+
+// ---- 에이전트 ----
+
+export interface DecisionSummary {
+  port: string
+  berth: string
+  vessel: string
+  group: string
+  gt: number | null
+  tau: string
+  a0: string
+  condition: Condition
+  risk: Risk
+  quantilesH: number[]
+  busyAtTau: boolean
+  queue: { vessel: string; status: string }[]
+  policy: { rta: string; delayH: number; speedKn: number; fuelT: number; co2T: number }
+  designSpeedKn: number
+  maxDelayH: number
+}
+
+export interface AgentMeta {
+  generatedBy: 'llm' | 'fallback'
+  fallbackReason?: string
+  ungrounded?: string[]
+  rejected?: string[]
+}
+
+export interface Clause {
+  kind: string
+  label: string
+  quote: string
+  start: number
+  end: number
+  note: string
+}
+
+export interface ContractResult extends AgentMeta {
+  clauses: Clause[]
+  assessment: string
+}
+
+export interface LineupShip {
+  berth: string | null
+  berthKey: string | null
+  order: number
+  vessel: string
+  status: 'berthed' | 'waiting' | 'inbound'
+  time: string | null
+  cargo: string | null
+  line: string | null
+}
+
+export interface LineupResult extends AgentMeta {
+  port: string | null
+  ships: LineupShip[]
+}
+
+export interface ExplainResult extends AgentMeta {
+  text: string
+}
+
+export interface DraftResult extends AgentMeta {
+  ko: string
+  en: string
+}
+
+export interface ToolCall {
+  name: string
+  input: Record<string, unknown>
+  ok: boolean
+  result: unknown
+}
+
+export interface ChatResult extends AgentMeta {
+  answer: string
+  tools: ToolCall[]
+}
+
+export interface AgentExamples {
+  contracts: { id: string; title: string; text: string; result: ContractResult }[]
+  mails: { id: string; title: string; port: string; text: string; result: LineupResult }[]
+  questions: string[]
+  explain: Record<string, ExplainResult>
+  drafts: Record<string, { master: DraftResult; charterer: DraftResult }>
+}

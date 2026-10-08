@@ -1,7 +1,22 @@
 import { useEffect, useReducer } from 'react'
-import type { Condition, Risk } from './types'
+import type { Condition, DecisionSummary, LineupShip, Risk } from './types'
 
 export type Screen = 'ports' | 'decision' | 'simulate' | 'evidence' | 'cii' | 'agent'
+export type AgentTab = 'contract' | 'lineup' | 'settle' | 'draft' | 'chat'
+export const AGENT_TABS: AgentTab[] = ['contract', 'lineup', 'settle', 'draft', 'chat']
+
+/** 결정 화면에서 지금 보고 있는 권고 (재생이면 사례·조건·위험 수준 키를 함께 둔다). */
+export interface CurrentDecision {
+  key: string | null
+  summary: DecisionSummary
+}
+
+/** 메일 구조화 결과를 실시간 결정의 대기 순번 조건으로 넘긴다. */
+export interface Handoff {
+  port: string
+  berth: string
+  ships: LineupShip[]
+}
 
 export interface AppState {
   screen: Screen
@@ -12,6 +27,9 @@ export interface AppState {
   revealed: boolean
   port: string
   liveShipId: string | null
+  agentTab: AgentTab
+  current: CurrentDecision | null
+  handoff: Handoff | null
 }
 
 export type Action =
@@ -24,6 +42,9 @@ export type Action =
   | { type: 'reveal'; revealed: boolean }
   | { type: 'port'; port: string }
   | { type: 'hash'; state: Partial<AppState> }
+  | { type: 'agentTab'; tab: AgentTab }
+  | { type: 'current'; value: CurrentDecision | null }
+  | { type: 'handoff'; value: Handoff | null }
 
 export const SCREENS: { id: Screen; label: string }[] = [
   { id: 'ports', label: '항만 현황' },
@@ -54,6 +75,14 @@ function reducer(s: AppState, a: Action): AppState {
       return { ...s, port: a.port }
     case 'hash':
       return { ...s, ...a.state }
+    case 'agentTab':
+      return { ...s, screen: 'agent', agentTab: a.tab }
+    case 'current':
+      return { ...s, current: a.value }
+    case 'handoff':
+      return a.value
+        ? { ...s, handoff: a.value, screen: 'decision', mode: 'live', port: a.value.port, liveShipId: null, condition: s.condition === 'public' ? 'lineup' : s.condition }
+        : { ...s, handoff: null }
   }
 }
 
@@ -66,6 +95,7 @@ function parseHash(): Partial<AppState> {
     return { screen: 'decision' }
   }
   if (screen === 'ports') return { screen: 'ports', ...(rest[0] ? { port: rest[0] } : {}) }
+  if (screen === 'agent') return { screen: 'agent', ...(AGENT_TABS.includes(rest[0] as AgentTab) ? { agentTab: rest[0] as AgentTab } : {}) }
   if (screen && SCREENS.some((x) => x.id === screen)) return { screen: screen as Screen }
   return {}
 }
@@ -73,6 +103,7 @@ function parseHash(): Partial<AppState> {
 function toHash(s: AppState): string {
   if (s.screen === 'decision') return s.mode === 'replay' ? `#decision/replay${s.caseId ? `/${s.caseId}` : ''}` : `#decision/live/${s.port}`
   if (s.screen === 'ports') return `#ports/${s.port}`
+  if (s.screen === 'agent') return `#agent/${s.agentTab}`
   return `#${s.screen}`
 }
 

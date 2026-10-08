@@ -97,7 +97,7 @@ async def rate_limit(request: Request, call_next):
 def health() -> dict:
     out = {"status": "ok" if "ctx" in STATE else "starting",
            "now": dt.datetime.now(KST).isoformat(timespec="seconds"),
-           "ingestEnabled": config.INGEST_ENABLED, "agentEnabled": bool(config.ANTHROPIC_API_KEY)}
+           "ingestEnabled": config.INGEST_ENABLED, "agentEnabled": config.env("KJIT_AGENT_LIVE", "0") == "1" and bool(config.ANTHROPIC_API_KEY)}
     with db.session() as con:
         rows = con.execute("SELECT job, MAX(at) FROM ingest_log WHERE ok=1 GROUP BY job").fetchall()
     out["lastIngest"] = {j: a for j, a in rows}
@@ -147,6 +147,10 @@ class DecisionIn(BaseModel):
     useState: bool = True
 
 
+def _name(v: str | None) -> str:
+    return "".join(ch for ch in (v or "").lower() if ch.isalnum())
+
+
 def _ts(s: str | None) -> pd.Timestamp | None:
     if not s:
         return None
@@ -185,12 +189,18 @@ def decision(body: DecisionIn) -> dict:
             if i.get("targetKey") == key and ieta is not None and ieta < eta and i["callsign"] != body.vessel.callsign:
                 plan.append(Ship(vessel=i["vessel"], callsign=i["callsign"], group=i["group"], gt=i.get("gt"),
                                  eta=ieta, domestic=i.get("domestic", False), source=i["source"]))
+    def known(s: ShipIn, ships: list[Ship]) -> bool:
+        n = _name(s.vessel)
+        return any((s.callsign and s.callsign == x.callsign) or (n and n == _name(x.vessel)) for x in ships)
+
     for s in body.lineup:
-        lineup.append(Ship(vessel=s.vessel, callsign=s.callsign, group=s.group, gt=s.gt, kind=s.kind,
-                           arrived=_ts(s.arrivedAt), source="user"))
+        if not known(s, lineup + occupants):
+            lineup.append(Ship(vessel=s.vessel, callsign=s.callsign, group=s.group, gt=s.gt, kind=s.kind,
+                               arrived=_ts(s.arrivedAt), source="user"))
     for s in body.plan:
-        plan.append(Ship(vessel=s.vessel, callsign=s.callsign, group=s.group, gt=s.gt, kind=s.kind,
-                         eta=_ts(s.eta), source="user"))
+        if not known(s, plan + lineup + occupants):
+            plan.append(Ship(vessel=s.vessel, callsign=s.callsign, group=s.group, gt=s.gt, kind=s.kind,
+                             eta=_ts(s.eta), source="user"))
 
     t = body.vessel
     req = DecisionRequest(port=body.port, berth_key=key, berth_name=body.berth,
@@ -276,6 +286,133 @@ def simulate_run(body: SimulateIn) -> dict:
         raise HTTPException(400, "기간은 2025-10 ~ 2026-09 안이어야 합니다")
     df, occ = STATE["sim"]
     return run(df, occ, body.port, (body.start, body.end), body.condition, body.risk, body.participation, body.seed)
+
+
+# ---------------------------------------------------------------- 에이전트
+
+class TextIn(BaseModel):
+    text: str = Field(max_length=40000)
+    port: str | None = None
+
+
+class PolicyIn(BaseModel):
+    rta: str
+    delayH: float
+    speedKn: float
+    fuelT: float
+    co2T: float
+
+
+class DecisionSummary(BaseModel):
+    """설명·문안 생성에 넘기는 결정 요약 (재생·실시간 공통)."""
+    port: str
+    berth: str
+    vessel: str = ""
+    group: str = ""
+    gt: float | None = None
+    tau: str
+    a0: str
+    condition: str
+    risk: str
+    quantilesH: list[float] = Field(min_length=19, max_length=19)
+    busyAtTau: bool
+    queue: list[dict] = Field(default_factory=list, max_length=60)
+    policy: PolicyIn
+    designSpeedKn: float
+    maxDelayH: float
+
+
+class DraftIn(BaseModel):
+    decision: DecisionSummary
+    kind: str = Field(pattern="^(master|charterer)$")
+
+
+class ChatIn(BaseModel):
+    messages: list[dict] = Field(max_length=24)
+
+
+def _wait_stats(port: str) -> dict:
+    df = pd.read_csv(config.PROC_DIR / "wait_summary.csv")
+    row = df[df["항만"] == port]
+    if row.empty:
+        raise HTTPException(404, f"대기 통계가 없는 항만입니다: {port}")
+    return {k: (None if pd.isna(v) else v) for k, v in row.iloc[0].to_dict().items()} | {
+        "basis": "2025-10~2026-09 입항분, 같은 선석 선행 선박 출항 기준 하한 추정"}
+
+
+def toolbox() -> dict:
+    from kjit.service.state import port_state as build_state
+
+    def recommend(port, berth, eta, group, gt, condition):
+        return decision(DecisionIn(port=port, berth=berth, eta=eta, condition=condition,
+                                   vessel=ShipIn(vessel="질의 선박", group=group, gt=gt)))
+
+    return {
+        "get_port_state": lambda port: build_state(ctx(), port, None),
+        "list_berths": lambda port: ctx().berths(port),
+        "recommend_arrival": recommend,
+        "simulate_policy": lambda **kw: simulate_run(SimulateIn(**kw)),
+        "wait_statistics": _wait_stats,
+    }
+
+
+def _agent(fn, *args, **kw) -> dict:
+    try:
+        return fn(*args, **kw)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
+@app.get("/api/agent/status")
+def agent_status() -> dict:
+    from kjit.service import agent
+
+    return agent.status()
+
+
+@app.get("/api/agent/examples")
+def agent_examples() -> dict:
+    p = config.PROC_DIR / "web" / "agent_examples.json"
+    if not p.exists():
+        raise HTTPException(503, "에이전트 예시가 없습니다")
+    return json.loads(p.read_text())
+
+
+@app.post("/api/agent/contract")
+def agent_contract(body: TextIn) -> dict:
+    from kjit.service import agent
+
+    return _agent(agent.contract, body.text)
+
+
+@app.post("/api/agent/lineup")
+def agent_lineup(body: TextIn) -> dict:
+    from kjit.service import agent
+
+    c = ctx()
+    return _agent(agent.lineup, body.text, body.port, {p: c.berths(p) for p in PORTS.values()})
+
+
+@app.post("/api/agent/explain")
+def agent_explain(body: DecisionSummary) -> dict:
+    from kjit.service import agent
+
+    return _agent(agent.explain, body.model_dump())
+
+
+@app.post("/api/agent/draft")
+def agent_draft(body: DraftIn) -> dict:
+    from kjit.service import agent
+
+    return _agent(agent.draft, body.decision.model_dump(), body.kind)
+
+
+@app.post("/api/agent/chat")
+def agent_chat(body: ChatIn) -> dict:
+    from kjit.service import agent
+
+    ctx()
+    return _agent(agent.chat, body.messages, toolbox())
 
 
 def main() -> None:

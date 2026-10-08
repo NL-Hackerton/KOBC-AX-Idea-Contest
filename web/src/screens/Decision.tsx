@@ -5,9 +5,10 @@ import QueuePanel from '../components/QueuePanel'
 import RecommendationCard from '../components/RecommendationCard'
 import RevealPanel from '../components/RevealPanel'
 import Segmented from '../components/Segmented'
+import { fromLive, fromReplay } from '../lib/summary'
 import { addHours, fmtDT, fromLocalInput, toLocalInput } from '../lib/time'
 import type { Action, AppState } from '../state'
-import type { Condition, Inbound, LiveDecision, PortState, ReplayCase, Risk } from '../types'
+import type { Condition, DecisionSummary, Inbound, LiveDecision, PortState, ReplayCase, Risk } from '../types'
 
 const PORTS = ['울산', '대산', '광양', '여천']
 const GROUPS = ['탱커·가스', '벌크', '일반화물', '컨테이너', '자동차운반', '기타']
@@ -42,6 +43,15 @@ export default function Decision({ state, dispatch }: { state: AppState; dispatc
   )
 }
 
+/** 지금 보고 있는 권고를 앱 상태에 남긴다 (에이전트 화면의 문안·정산 계산기가 이어받는다). */
+function useCurrent(dispatch: (a: Action) => void, key: string | null, make: () => DecisionSummary | null) {
+  useEffect(() => {
+    const summary = key ? make() : null
+    dispatch({ type: 'current', value: summary ? { key: key!.startsWith('live|') ? null : key, summary } : null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+}
+
 function Controls({ state, dispatch }: { state: AppState; dispatch: (a: Action) => void }) {
   return (
     <div className="toolbar">
@@ -61,10 +71,13 @@ function Replay({ state, dispatch }: { state: AppState; dispatch: (a: Action) =>
     const cs = (idx?.cases ?? []).filter((x) => x.busyAtTau && (port === '전체' || x.port === port))
     return cs.sort((a, b) => a.a0.localeCompare(b.a0))
   }, [idx, port])
+  useCurrent(dispatch, c ? `${c.id}|${state.condition}|${state.risk}` : null, () => (c ? fromReplay(c, state.condition, state.risk) : null))
   if (!idx || !c) return <p className="muted">재생 사례를 불러오지 못했습니다.</p>
   const cond = c.conditions[state.condition]
   const pol = cond.policies[state.risk]
   const maxEnd = new Date(addHours(c.a0, c.maxDelayH)).toISOString()
+  const summary = fromReplay(c, state.condition, state.risk)
+  const exampleKey = `${c.id}|${state.condition}|${state.risk}`
   return (
     <>
       <div className="toolbar picker">
@@ -134,7 +147,7 @@ function Replay({ state, dispatch }: { state: AppState; dispatch: (a: Action) =>
             showTable={table}
           />
         </section>
-        <RecommendationCard policies={cond.policies} risk={state.risk} a0={c.a0} designSpeedKn={c.designSpeedKn} busy={c.busyAtTau} vessel={c.vessel} berth={c.berth} replay />
+        <RecommendationCard policies={cond.policies} risk={state.risk} a0={c.a0} designSpeedKn={c.designSpeedKn} busy={summary.busyAtTau} replay summary={summary} exampleKey={exampleKey} />
       </div>
       <RevealPanel revealed={state.revealed} onReveal={() => dispatch({ type: 'reveal', revealed: true })} actualFree={c.actualFree} actualWaitH={c.actualWaitH} policy={pol} busy={c.busyAtTau} />
     </>
@@ -175,8 +188,15 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
     getPortState(port).then((s) => {
       setPs(s)
       const want = s?.inbound.find((i) => i.id === state.liveShipId && i.targetKey)
-      const first = want ?? s?.inbound.find((i) => i.targetKey)
-      if (first) choose(first, s!)
+      const hoKey = state.handoff?.port === port ? s?.singleBerths.find((b) => b.name === state.handoff!.berth)?.key : undefined
+      const forHandoff = hoKey ? s?.inbound.find((i) => i.targetKey === hoKey) : undefined
+      const first = want ?? forHandoff ?? s?.inbound.find((i) => i.targetKey)
+      if (hoKey && !want && !forHandoff && s) {
+        setPick('')
+        const eta = new Date(Date.now() + 24 * 3600000)
+        eta.setMinutes(0, 0, 0)
+        setForm((f) => ({ ...f, vessel: '', callsign: '', berth: state.handoff!.berth, eta: eta.toISOString() }))
+      } else if (first) choose(first, s!)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [port, state.liveShipId])
@@ -187,7 +207,10 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
     setForm({ vessel: i.vessel, callsign: i.callsign, group: GROUPS.includes(i.group) ? i.group : '기타', gt: i.gt ?? 5000, domestic: i.domestic, berth: berthName(i.targetKey, s), eta: i.eta })
   }
 
-  const sig = `${port}|${form.berth}|${form.eta}|${form.vessel}|${form.gt}|${form.group}|${form.domestic}`
+  const ho = state.handoff && state.handoff.port === port && state.handoff.berth === form.berth ? state.handoff : null
+  const hoLineup = ho ? ho.ships.filter((x) => x.status === 'waiting' && x.time) : []
+  const hoPlan = ho ? ho.ships.filter((x) => x.status === 'inbound' && x.time) : []
+  const sig = `${port}|${form.berth}|${form.eta}|${form.vessel}|${form.gt}|${form.group}|${form.domestic}|${ho ? ho.ships.length : 0}`
 
   async function run(cond: Condition) {
     if (!form.berth || !form.eta) return
@@ -200,6 +223,8 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
       vessel: { vessel: form.vessel, callsign: form.callsign, group: form.group, gt: form.gt, domestic: form.domestic },
       eta: form.eta,
       condition: cond,
+      lineup: hoLineup.map((x) => ({ vessel: x.vessel, group: form.group, gt: null, arrivedAt: x.time! })),
+      plan: hoPlan.map((x) => ({ vessel: x.vessel, group: form.group, gt: null, eta: x.time! })),
     })
     setBusy(false)
     if ('error' in r) setErr(r.error)
@@ -212,6 +237,7 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
   }, [state.condition, sig])
 
   const d = results[`${sig}|${state.condition}`]
+  useCurrent(dispatch, d ? `live|${sig}|${state.condition}|${state.risk}` : null, () => (d ? fromLive(d, state.risk, port, form.vessel, form.group, form.gt) : null))
   const inbound = ps?.inbound.filter((i) => i.targetKey) ?? []
   return (
     <>
@@ -277,6 +303,15 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
           </button>
         </div>
       </details>
+      {state.handoff && state.handoff.port === port && (
+        <p className="notice small">
+          메일에서 구조화한 {state.handoff.berth} 대기 순번 {state.handoff.ships.filter((x) => x.status !== 'berthed').length}척을{' '}
+          {ho ? '대기 순번·선석계획 조건에 반영했습니다. 공개 데이터의 대기 선박과 겹치는 배는 한 번만 셉니다.' : `목적 선석을 ${state.handoff.berth}으로 고르면 반영합니다.`}{' '}
+          <button className="link" onClick={() => dispatch({ type: 'handoff', value: null })}>
+            지우기
+          </button>
+        </p>
+      )}
       {err && <p className="notice error">{err}</p>}
       {d && (
         <>
@@ -302,7 +337,7 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
                 showTable={table}
               />
             </section>
-            <RecommendationCard policies={d.policies} risk={state.risk} a0={d.a0} designSpeedKn={d.designSpeedKn} busy={d.busyAtTau} vessel={form.vessel} berth={d.berth} replay={false} />
+            <RecommendationCard policies={d.policies} risk={state.risk} a0={d.a0} designSpeedKn={d.designSpeedKn} busy={d.busyAtTau} replay={false} summary={fromLive(d, state.risk, port, form.vessel, form.group, form.gt)} exampleKey={null} />
           </div>
           <p className="small muted live-note">
             {fmtDT(d.tau)} 공개 데이터 기준 권고입니다. 선석 상황이 바뀌면 다시 계산하세요. 실제 결과는 항차가 끝난 뒤 이 시스템의 수집 데이터로 확인할 수 있습니다.
