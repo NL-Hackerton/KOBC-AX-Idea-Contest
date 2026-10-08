@@ -8,6 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import queue
 import threading
 import time
 from collections import defaultdict, deque
@@ -26,6 +27,19 @@ from kjit.service.ingest import PORTS
 KST = dt.timezone(dt.timedelta(hours=9))
 log = logging.getLogger("kjit")
 STATE: dict = {}
+
+
+_decision_log: queue.Queue = queue.Queue()
+
+
+def _decision_writer() -> None:
+    while True:
+        row = _decision_log.get()
+        try:
+            with db.session() as con:
+                con.execute("INSERT INTO decisions VALUES (?,?,?)", row)
+        except Exception:  # 기록 실패가 서비스를 멈추지 않는다
+            log.exception("decision log write failed")
 
 
 def ctx():
@@ -63,6 +77,7 @@ def _load() -> None:
 async def lifespan(_app: FastAPI):
     logging.basicConfig(level=logging.INFO)
     threading.Thread(target=_load, daemon=True).start()
+    threading.Thread(target=_decision_writer, daemon=True).start()
     yield
     if s := STATE.get("scheduler"):
         s.shutdown(wait=False)
@@ -173,6 +188,7 @@ def decision(body: DecisionIn) -> dict:
     if eta is None or eta <= at:
         raise HTTPException(422, "도착 예정은 결정 시각보다 뒤여야 합니다")
 
+    t0 = time.time()
     occupants, lineup, plan = [], [], []
     if body.useState:
         st = build_state(c, body.port, at)
@@ -207,12 +223,13 @@ def decision(body: DecisionIn) -> dict:
                           target=Ship(vessel=t.vessel, callsign=t.callsign, group=t.group, kind=t.kind, gt=t.gt,
                                       domestic=t.domestic, eta=eta),
                           condition=body.condition, occupants=occupants, lineup=lineup, plan=plan, tau=at)
+    t1 = time.time()
     with c.lock:
-        occ, queue = c.occ, c.queue
-    out = decide(req, occ, queue, c.bundle, c.recal)
-    with db.session() as con:
-        con.execute("INSERT INTO decisions VALUES (?,?,?)",
-                    (at.isoformat(), body.model_dump_json(), json.dumps(out, ensure_ascii=False)))
+        occ, q = c.occ, c.queue
+    out = decide(req, occ, q, c.bundle, c.recal)
+    log.info("decision %s %s: state %.2fs, engine %.2fs", body.port, body.berth, t1 - t0, time.time() - t1)
+    # 기록은 쓰기 전용 스레드가 한다. 수집이 쓰기 잠금을 쥔 동안 응답이 기다리지 않게 한다
+    _decision_log.put((at.isoformat(), body.model_dump_json(), json.dumps(out, ensure_ascii=False)))
     return out
 
 
