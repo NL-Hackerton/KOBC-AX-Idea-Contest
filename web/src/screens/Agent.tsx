@@ -33,7 +33,7 @@ export default function Agent({ state, dispatch }: { state: AppState; dispatch: 
         <Segmented label="기능" value={state.agentTab} options={TABS} onChange={(t) => dispatch({ type: 'agentTab', tab: t })} />
         <p className="small muted agent-status">
           {!st
-            ? '서버에 연결되어 있지 않습니다. 저장된 예시 결과와 정산 계산기를 쓸 수 있습니다.'
+            ? '배포본: 예시 계약·메일의 분석 결과와 정산 계산기를 쓸 수 있습니다. 직접 붙여 넣은 문서 분석과 질의응답은 서버를 실행하면 동작합니다.'
             : st.live
               ? `LLM 켜짐 (${st.model}), 오늘 사용 $${st.spentTodayUsd.toFixed(2)} / 상한 $${st.capUsd.toFixed(0)}. 상한을 넘으면 규칙·템플릿으로 바뀝니다.`
               : 'LLM 꺼짐. 같은 화면이 규칙·템플릿과 엔진 도구로 동작합니다.'}
@@ -55,7 +55,7 @@ async function runWithExample<T>(kind: 'contract' | 'lineup', body: { text: stri
   const r = await postAgent<T & AgentMeta>(kind, body)
   if (!('error' in r)) return { data: r, offline: false }
   if (r.error === 'no-server') {
-    return saved ? { data: saved, offline: true } : { error: '서버에 연결되어 있지 않습니다. 저장본에서는 기본 예시만 분석 결과를 볼 수 있습니다.' }
+    return saved ? { data: saved, offline: true } : { error: '배포본에서는 기본 예시의 분석 결과만 볼 수 있습니다. 직접 붙여 넣은 본문은 서버를 실행하면 분석합니다.' }
   }
   return { error: r.error }
 }
@@ -468,7 +468,7 @@ function ChatTab() {
     const r = await postAgent<ChatResult>('chat', { messages: next.filter((x) => !x.error).map(({ role, content }) => ({ role, content })) })
     setBusy(false)
     if ('error' in r)
-      setTurns([...next, { role: 'assistant', content: r.error === 'no-server' ? '질의응답은 서버의 엔진을 불러 답합니다. 지금은 서버에 연결되어 있지 않습니다.' : r.error, error: true }])
+      setTurns([...next, { role: 'assistant', content: r.error === 'no-server' ? '질의응답은 서버의 엔진을 불러 답합니다. 이 배포본에는 서버가 연결되어 있지 않습니다.' : r.error, error: true }])
     else setTurns([...next, { role: 'assistant', content: r.answer, meta: r, tools: r.tools }])
   }
 
@@ -484,7 +484,7 @@ function ChatTab() {
               </button>
             ))}
           </div>
-          {!hasServer() && <p className="small muted">서버가 연결된 배포 주소에서 쓸 수 있습니다.</p>}
+          {!hasServer() && <p className="small muted">질의응답은 서버를 실행한 환경에서 쓸 수 있습니다. 시연 영상에 실제 동작이 있습니다.</p>}
         </div>
       )}
       <div className="chat-log" aria-live="polite">

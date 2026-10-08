@@ -27,7 +27,7 @@ SIM_DIR = PROC_DIR / "sim"
 WEB_DIR = PROC_DIR / "web"
 YEAR_START = pd.Timestamp("2025-10-01", tz="Asia/Seoul")
 PERIODS = {"test": ("2026-08", "2026-09"), "year": ("2025-10", "2026-09")}
-PARTICIPATION = (0.25, 0.5, 1.0)
+PARTICIPATION = (0.25, 0.5, 0.75, 1.0)  # 서버 없는 공개 빌드에서 고를 수 있는 참여율
 GRID_PORTS = ("울산", "대산", "광양", "여천", "전체")
 
 
@@ -147,7 +147,22 @@ def load() -> tuple[pd.DataFrame, pd.DataFrame]:
     return pd.read_parquet(SIM_DIR / "cases.parquet"), pd.read_parquet(SIM_DIR / "occupancy.parquet")
 
 
+def write_grid() -> dict:
+    """사전 계산을 다시 하지 않고 격자만 다시 만든다."""
+    df, occ = load()
+    g = grid(df, occ)
+    WEB_DIR.mkdir(parents=True, exist_ok=True)
+    (WEB_DIR / "simulate_grid.json").write_text(json.dumps(g, ensure_ascii=False, separators=(",", ":")))
+    return g
+
+
 def main() -> None:
+    import sys
+
+    if "--grid-only" in sys.argv:
+        g = write_grid()
+        print(f"격자 {len(g['rows'])}행")
+        return
     df = precompute()
     occ = pd.read_parquet(SIM_DIR / "occupancy.parquet")
     verify(df, occ)

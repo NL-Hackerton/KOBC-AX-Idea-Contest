@@ -1,178 +1,178 @@
 {
- "url": "http://localhost:5173/",
+ "url": "http://localhost:4175/",
  "screens": {
   "ports-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 8715,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 8722,
    "errors": []
   },
   "decision-replay-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
    "text": 32775,
    "errors": []
   },
   "decision-live-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
-   "text": 1714,
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 2828,
    "errors": []
   },
   "simulate-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 1462,
    "errors": []
   },
   "evidence-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 2704,
    "errors": []
   },
   "cii-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 866,
    "errors": []
   },
   "agent-contract-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 288,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 329,
    "errors": []
   },
   "agent-settle-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 610,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 712,
    "errors": []
   },
   "agent-chat-desktop": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 293,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 385,
    "errors": []
   },
   "ports-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 8715,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 8722,
    "errors": []
   },
   "decision-replay-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
    "text": 32742,
    "errors": []
   },
   "decision-live-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
-   "text": 1714,
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 2793,
    "errors": []
   },
   "simulate-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 1462,
    "errors": []
   },
   "evidence-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 2704,
    "errors": []
   },
   "cii-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 866,
    "errors": []
   },
   "agent-contract-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 288,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 329,
    "errors": []
   },
   "agent-settle-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 610,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 712,
    "errors": []
   },
   "agent-chat-mobile": {
    "overflow": 0,
-   "status": "실시간 서버 연결",
-   "text": 293,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 385,
    "errors": []
   }
  },
  "single": {
   "ports": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
-   "text": 8705,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 8722,
    "errors": [],
-   "refusedRequests": 1
+   "refusedRequests": 0
   },
   "decision-replay": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
-   "text": 32841,
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 32775,
    "errors": [],
-   "refusedRequests": 1
+   "refusedRequests": 0
   },
   "decision-live": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
-   "text": 1752,
+   "status": "공개 데이터 10/8 22:24 기준\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 2828,
    "errors": [],
-   "refusedRequests": 3
+   "refusedRequests": 0
   },
   "simulate": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 1462,
    "errors": [],
-   "refusedRequests": 4
+   "refusedRequests": 0
   },
   "evidence": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 2704,
    "errors": [],
-   "refusedRequests": 5
+   "refusedRequests": 0
   },
   "cii": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "status": "공개 데이터 10/8 22:24 기준",
    "text": 866,
    "errors": [],
-   "refusedRequests": 6
+   "refusedRequests": 0
   },
   "agent-contract": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
-   "text": 298,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 329,
    "errors": [],
-   "refusedRequests": 7
+   "refusedRequests": 0
   },
   "agent-settle": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
-   "text": 620,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 712,
    "errors": [],
-   "refusedRequests": 7
+   "refusedRequests": 0
   },
   "agent-chat": {
    "overflow": 0,
-   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
-   "text": 303,
+   "status": "공개 데이터 10/8 22:24 기준",
+   "text": 385,
    "errors": [],
-   "refusedRequests": 7
+   "refusedRequests": 0
   }
  }
 }

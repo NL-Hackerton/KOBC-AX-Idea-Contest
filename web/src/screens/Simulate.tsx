@@ -62,7 +62,7 @@ export default function Simulate() {
   const find = (c: Condition, r: number, p: number) =>
     grid?.rows.find((x) => x.periodKey === period && x.port === port && x.condition === c && x.risk === r && Math.abs(x.participation - p) < 1e-9)
 
-  const onGrid = [25, 50, 100].includes(part)
+  const onGrid = (grid?.participation ?? [0.25, 0.5, 1]).some((p) => Math.abs(p * 100 - part) < 1e-9)
   useEffect(() => {
     setCustom(null)
     if (onGrid || !grid || !hasServer()) return
@@ -104,8 +104,8 @@ export default function Simulate() {
         <Segmented label="위험 수준" value={String(risk)} options={RISKS.map((r) => ({ value: String(r), label: String(r) }))} onChange={(v) => setRisk(Number(v))} />
         <label className="seg-wrap">
           <span className="seg-label small muted">참여율 {part}%</span>
-          <input type="range" min={5} max={100} step={5} value={part} onChange={(e) => setPart(Number(e.target.value))} aria-label="참여율" />
-          <span className="small muted">{onGrid ? '미리 계산한 값' : hasServer() ? (pending ? '서버에서 계산 중' : '서버 계산') : '25·50·100%만 저장본에 있음'}</span>
+          <input type="range" min={hasServer() ? 5 : 25} max={100} step={hasServer() ? 5 : 25} value={part} onChange={(e) => setPart(Number(e.target.value))} aria-label="참여율" />
+          <span className="small muted">{onGrid ? '미리 계산한 값' : hasServer() ? (pending ? '서버에서 계산 중' : '서버 계산') : '배포본은 25% 단위로 미리 계산'}</span>
         </label>
       </div>
 

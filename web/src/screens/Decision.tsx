@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getPortState, hasServer, postDecision, replayCase, replayIndex } from '../api'
+import { getPortState, hasServer, postDecision, replayCase, replayIndex, savedDecision, snapshotMeta } from '../api'
 import BerthFanChart from '../components/BerthFanChart'
 import QueuePanel from '../components/QueuePanel'
 import RecommendationCard from '../components/RecommendationCard'
@@ -177,6 +177,7 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
   const [ps, setPs] = useState<PortState | null>(null)
   const [pick, setPick] = useState<string>('')
   const [form, setForm] = useState({ vessel: '', callsign: '', group: '탱커·가스', gt: 5000, domestic: false, berth: '', eta: '' })
+  const [chosen, setChosen] = useState('') // 목록에서 고른 배의 항차 정보 (배포본에서 미리 계산한 권고와 맞는지 확인)
   const [results, setResults] = useState<Record<string, LiveDecision>>({})
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -204,7 +205,9 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
   const berthName = (key: string | null, s: PortState) => s.singleBerths.find((b) => b.key === key)?.name ?? ''
   function choose(i: Inbound, s: PortState) {
     setPick(i.id)
-    setForm({ vessel: i.vessel, callsign: i.callsign, group: GROUPS.includes(i.group) ? i.group : '기타', gt: i.gt ?? 5000, domestic: i.domestic, berth: berthName(i.targetKey, s), eta: i.eta })
+    const f = { vessel: i.vessel, callsign: i.callsign, group: GROUPS.includes(i.group) ? i.group : '기타', gt: i.gt ?? 5000, domestic: i.domestic, berth: berthName(i.targetKey, s), eta: i.eta }
+    setForm(f)
+    setChosen(JSON.stringify(f))
   }
 
   const ho = state.handoff && state.handoff.port === port && state.handoff.berth === form.berth ? state.handoff : null
@@ -215,6 +218,13 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
   async function run(cond: Condition) {
     if (!form.berth || !form.eta) return
     const k = `${sig}|${cond}`
+    if (!hasServer()) {
+      const saved = pick && JSON.stringify(form) === chosen && !ho ? savedDecision(pick, cond) : null
+      setErr(null)
+      if (saved) setResults((x) => ({ ...x, [k]: saved }))
+      else setErr('이 배포본에서는 입항 예정 목록의 배만 미리 계산한 권고를 볼 수 있습니다. 직접 입력하거나 고친 항차는 서버를 실행하면 계산합니다.')
+      return
+    }
     setBusy(true)
     setErr(null)
     const r = await postDecision({
@@ -272,7 +282,11 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
           </select>
         </label>
       </div>
-      {!hasServer() && <p className="notice">실시간 서버에 연결되어 있지 않습니다. 저장된 항만 상태로 선박 목록은 보이지만, 권고 계산은 재생 모드에서 확인해 주세요.</p>}
+      {!hasServer() && (
+        <p className="notice small">
+          이 배포본은 {snapshotMeta.snapshotDate ? fmtDT(snapshotMeta.snapshotDate) : '저장본'} 기준 공개 데이터로 고정되어 있습니다. 입항 예정 목록의 배는 그 시각에 엔진으로 미리 계산한 권고를 보여주고, 직접 입력한 항차는 서버를 실행하면 계산합니다.
+        </p>
+      )}
       <details className="manual" open={pick === ''}>
         <summary className="small">항차 정보 {pick === '' ? '입력' : '고치기'}</summary>
         <div className="form-grid">

@@ -10,7 +10,7 @@ const REASON: Record<string, string> = {
   max_tokens: 'LLM 응답이 잘려 규칙·템플릿으로 만들었습니다',
   'invalid-json': 'LLM 응답 형식이 맞지 않아 규칙 결과로 바꿨습니다',
   'too-many-turns': 'LLM 도구 호출이 길어져 규칙으로 답했습니다',
-  example: '서버에 연결되어 있지 않아 저장된 예시 결과를 보여줍니다',
+  example: '배포본이라 미리 만든 결과를 보여줍니다',
 }
 
 export default function GenBadge({ meta, offline }: { meta: AgentMeta; offline?: boolean }) {

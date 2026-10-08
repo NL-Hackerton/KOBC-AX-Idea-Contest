@@ -30,7 +30,7 @@ export default function AgentNote({ summary, exampleKey, showDrafts }: { summary
       const ex = agentExamples()
       const saved = exampleKey ? (kind === 'explain' ? ex?.explain[exampleKey] : ex?.drafts[exampleKey]?.[kind]) : undefined
       if (r.error === 'no-server' && saved) out = { meta: saved, offline: true, ...saved }
-      else out = { error: r.error === 'no-server' ? '서버에 연결되어 있지 않습니다. 저장본에서는 대표 사례만 설명과 문안을 볼 수 있습니다.' : r.error }
+      else out = { error: r.error === 'no-server' ? '배포본에서는 대표 사례의 설명과 문안을 미리 만들어 두었습니다. 다른 항차는 서버를 실행하면 만들 수 있습니다.' : r.error }
     } else out = { meta: r, offline: false, ...r }
     setCache((c) => ({ ...c, [k]: out }))
   }

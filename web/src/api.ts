@@ -81,6 +81,7 @@ const S = snapshot as unknown as {
   simulate_grid?: unknown
   cii_constants?: unknown
   agent_examples?: unknown
+  live_decisions?: Record<string, Record<string, LiveDecision>>
 }
 
 export const snapshotMeta = S.meta
@@ -136,6 +137,11 @@ export async function postDecision(body: DecisionBody): Promise<LiveDecision | {
     setMode('snapshot')
     return { error: '실시간 서버에 연결할 수 없습니다. 저장본 화면을 이용해 주세요.' }
   }
+}
+
+/** 서버 없는 배포본: 저장본 시각의 입항 예정 선박마다 미리 계산한 권고. */
+export function savedDecision(id: string, cond: string): LiveDecision | null {
+  return S.live_decisions?.[id]?.[cond] ?? null
 }
 
 export function snapshotPart<T>(key: 'evidence' | 'simulate_grid' | 'cii_constants' | 'agent_examples'): T | null {

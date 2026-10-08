@@ -4,6 +4,8 @@
 
 비용이 드는 단계(호스팅, Anthropic API)는 팀 승인 뒤에만 실행한다.
 
+2026-10-08 결정: 공모전 제출에는 서버를 호스팅하지 않고 Pages 배포본(저장본 모드)과 단일 HTML을 쓴다(5절). 1~4절은 로컬이나 나중의 서버 운영을 위한 절차로 남긴다.
+
 ## 1. 데이터 묶음
 
 ```bash
@@ -49,7 +51,7 @@ fly secrets set ANTHROPIC_API_KEY=... KJIT_AGENT_LIVE=1 AGENT_DAILY_USD_CAP=5
 
 ## 5. 웹 앱
 
-- Pages: 저장소 공개 전환(10/26) 뒤 Settings → Pages → Source를 GitHub Actions로 두고, 저장소 변수 `KJIT_API_BASE`에 서버 주소를 넣은 다음 `pages` 워크플로를 수동 실행한다. 결과물에 단일 HTML(`k-jit-single.html`)도 함께 올라간다.
+- Pages: 저장소 공개 전환(10/26) 뒤 Settings → Pages → Source를 GitHub Actions로 두고 `pages` 워크플로를 수동 실행한다. 서버가 없으므로 저장소 변수 `KJIT_API_BASE`는 비워 둔다(저장본 모드). 실행 전에 `uv run python -m kjit.service.snapshot`으로 저장본을 갱신해 커밋한다. 결과물에 단일 HTML(`k-jit-single.html`)도 함께 올라간다.
 - 단일 HTML: `cd web && VITE_API_BASE=https://<서버> npm run build:single` → `web/dist-single/index.html`. 서버 주소 없이 빌드하면 저장본 전용이다.
 - 저장본 갱신: `uv run python -m kjit.service.snapshot` 뒤 웹을 다시 빌드한다(제출 직전 10/28 기준으로 고정).
 

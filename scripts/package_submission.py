@@ -1,8 +1,8 @@
 """제출 zip 구성 (기획 9절): 서명 PDF, 단일 HTML, 시연 영상, 여는 방법.
 
-    cd web && VITE_API_BASE=https://<서버> npm run build:single && cd ..
+    cd web && npm run build:single && cd ..   # 서버 없는 배포본
     uv run --with playwright python scripts/demo_video.py
-    uv run python scripts/package_submission.py --pdf <성명>_해운항만물류_AX공모전.pdf --server https://<서버> --pages https://<Pages>
+    uv run python scripts/package_submission.py --pdf <성명>_해운항만물류_AX공모전.pdf --pages https://nl-hackerton.github.io/KOBC-AX-Idea-Contest/
 
 서명 PDF가 없으면 경고하고 나머지만 묶는다(리허설용). 결과: build/submission/k-jit-submission.zip
 """
@@ -21,13 +21,14 @@ ROOT = Path(__file__).resolve().parents[1]
 README = """K-JIT 선석 가용 확률 예측 기반 적시 입항 코파일럿
 2026 해운·항만·물류 AX 혁신 아이디어 공모전 제출물
 
-1. 웹 주소(실시간): {pages}
-   서버가 공공데이터를 30분마다 수집해 항만 상태와 권고를 실시간으로 계산합니다.
-   서버: {server}
+1. 웹 주소: {pages}
+   저장소: {repo}
+   웹 앱은 {snapshot} 기준 공개 데이터로 고정한 배포본입니다. 입항 예정 선박의 권고와 시뮬레이터
+   결과는 저장소의 Python 엔진으로 그 시각에 계산했습니다. 공공데이터를 30분마다 수집해 실시간으로
+   계산하는 서버와 질의응답은 저장소의 README에 따라 실행할 수 있으며, 시연 영상에 실제 동작이 있습니다.
 
 2. k-jit.html (단일 파일)
-   인터넷 연결 없이 더블클릭으로 열립니다. 서버에 연결되면 실시간 화면을, 연결되지 않으면
-   {snapshot} 기준 저장본을 보여줍니다(화면 오른쪽 위 표식에 표시). 크롬·엣지·사파리 최신판 권장.
+   인터넷 연결 없이 더블클릭으로 열리는 같은 웹 앱입니다. 크롬·엣지·사파리 최신판 권장.
 
 3. k-jit-demo.mp4 (약 3분 시연 영상)
 
@@ -43,7 +44,8 @@ def main() -> None:
     ap.add_argument("--pdf", default=None)
     ap.add_argument("--single", default=str(ROOT / "web" / "dist-single" / "index.html"))
     ap.add_argument("--video", default=str(ROOT / "build" / "demo" / "k-jit-demo.mp4"))
-    ap.add_argument("--server", default="(배포 후 기입)")
+    ap.add_argument("--server", default="")
+    ap.add_argument("--repo", default="https://github.com/NL-Hackerton/KOBC-AX-Idea-Contest")
     ap.add_argument("--pages", default="(공개 전환 후 기입)")
     ap.add_argument("--out", default=str(ROOT / "build" / "submission" / "k-jit-submission.zip"))
     args = ap.parse_args()
@@ -55,7 +57,7 @@ def main() -> None:
     files = {
         "k-jit.html": single.read_bytes(),
         "k-jit-demo.mp4": video.read_bytes(),
-        "README.txt": README.format(pages=args.pages, server=args.server, snapshot=snapshot,
+        "README.txt": README.format(pages=args.pages, repo=args.repo, snapshot=snapshot,
                                     freeze=dt.date.today().isoformat()).encode("utf-8"),
     }
     if args.pdf:

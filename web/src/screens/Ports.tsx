@@ -40,7 +40,7 @@ export default function Ports({ state, dispatch }: { state: AppState; dispatch: 
             지금
           </button>
         </label>
-        {!hasServer() && <span className="small muted">서버 연결 없이 저장본 시각의 상태만 볼 수 있습니다.</span>}
+        {!hasServer() && <span className="small muted">이 배포본은 오른쪽 위 기준 시각의 항만 상태로 고정되어 있습니다.</span>}
       </div>
       {loading && <p className="muted">불러오는 중</p>}
       {!loading && !ps && <p className="notice">이 시각의 상태를 불러오지 못했습니다.</p>}
