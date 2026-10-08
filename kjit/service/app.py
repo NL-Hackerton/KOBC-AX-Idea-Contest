@@ -44,6 +44,14 @@ def _load() -> None:
         data = json.loads(rp.read_text())
         STATE["replay"] = data
         STATE["replay_index"] = {c["id"]: c for c in data["cases"]}
+    sim = config.PROC_DIR / "sim" / "cases.parquet"
+    if sim.exists():
+        from kjit.engine.simulate import load
+
+        STATE["sim"] = load()
+    gp = config.PROC_DIR / "web" / "simulate_grid.json"
+    if gp.exists():
+        STATE["sim_grid"] = json.loads(gp.read_text())
     if config.INGEST_ENABLED:
         from kjit.service.scheduler import start
 
@@ -218,6 +226,37 @@ def replay_case(case_id: str) -> dict:
     if c is None:
         raise HTTPException(404, f"재생 사례가 없습니다: {case_id}")
     return c
+
+
+class SimulateIn(BaseModel):
+    port: str = "전체"
+    start: str = "2026-08"
+    end: str = "2026-09"
+    condition: str = "plan"
+    risk: float = 0.1
+    participation: float = Field(1.0, ge=0, le=1)
+    seed: int = 0
+
+
+@app.get("/api/simulate/grid")
+def simulate_grid() -> dict:
+    if "sim_grid" not in STATE:
+        raise HTTPException(503, "시뮬레이터 격자가 없습니다")
+    return STATE["sim_grid"]
+
+
+@app.post("/api/simulate")
+def simulate_run(body: SimulateIn) -> dict:
+    from kjit.engine.simulate import run
+
+    if "sim" not in STATE:
+        raise HTTPException(503, "시뮬레이터 데이터가 없습니다")
+    if body.condition not in ("public", "lineup", "plan") or body.risk not in (0.1, 0.2, 0.3, 0.5):
+        raise HTTPException(400, "조건 또는 위험 수준이 올바르지 않습니다")
+    if not ("2025-10" <= body.start <= body.end <= "2026-09"):
+        raise HTTPException(400, "기간은 2025-10 ~ 2026-09 안이어야 합니다")
+    df, occ = STATE["sim"]
+    return run(df, occ, body.port, (body.start, body.end), body.condition, body.risk, body.participation, body.seed)
 
 
 def main() -> None:

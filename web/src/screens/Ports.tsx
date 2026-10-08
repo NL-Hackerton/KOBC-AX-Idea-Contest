@@ -130,7 +130,7 @@ function PortView({ ps, onDecide }: { ps: PortState; onDecide: (id: string) => v
               </thead>
               <tbody>
                 {ps.anchorage.map((w) => (
-                  <tr key={`${w.callsign}-${w.since}`}>
+                  <tr key={`${w.callsign}-${w.since}-${w.vessel}`}>
                     <td>{w.vessel}</td>
                     <td>{fmtDT(w.since)}</td>
                     <td>{w.waitedH.toFixed(0)}시간</td>
@@ -189,11 +189,11 @@ function BerthBoard({ ps }: { ps: PortState }) {
                   비어 있음
                 </text>
               )}
-              {occ.map((b) => {
+              {occ.map((b, j) => {
                 const h0 = -b.elapsedH
                 const [lo, , , med, , , hi] = b.predQ
                 return (
-                  <g key={b.callsign}>
+                  <g key={`${b.callsign}-${j}`}>
                     <title>{`${b.vessel} · 접안 ${fmtDT(b.since)} · 남은 체류 예측 ${med.toFixed(0)}시간 (${lo.toFixed(0)}~${hi.toFixed(0)})${b.declaredDepart ? ` · 출항 예정 신고 ${fmtDT(b.declaredDepart)}` : ''}${b.actualDepart ? ` · 실제 출항 ${fmtDT(b.actualDepart)}` : ''}`}</title>
                     <rect className="occ" x={x(h0)} width={Math.max(2, x(0) - x(h0))} y={3} height={12} rx={2} />
                     <rect className="pred-range" x={x(lo)} width={Math.max(2, x(hi) - x(lo))} y={5} height={8} rx={2} />
@@ -240,10 +240,10 @@ function PortMap({ ps }: { ps: PortState }) {
   return (
     <div ref={ref} className="map">
       <svg width={width} height={H} role="img" aria-label="울산항 항내 선박 위치">
-        {pts.map((p) => {
+        {pts.map((p, i) => {
           const cls = berthed.has(p.callsign) ? 'berthed' : waiting.has(p.callsign) ? 'waiting' : p.sog > 1 ? 'moving' : 'other'
           return (
-            <circle key={p.callsign + p.t} className={`ship ${cls}`} cx={X(p.lon)} cy={Y(p.lat)} r={cls === 'other' || cls === 'moving' ? 2.5 : 4}>
+            <circle key={`${p.callsign}-${p.t}-${i}`} className={`ship ${cls}`} cx={X(p.lon)} cy={Y(p.lat)} r={cls === 'other' || cls === 'moving' ? 2.5 : 4}>
               <title>{`${p.name} · ${p.sog?.toFixed(1)}노트 · ${fmtDT(p.t)}`}</title>
             </circle>
           )

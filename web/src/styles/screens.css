@@ -154,3 +154,13 @@ main { padding-top: 16px; min-height: 60vh; }
 .map .ship.moving { fill: #8fb5e3; }
 @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
 .table-scroll .data-table td, .table-scroll .data-table th { white-space: nowrap; text-align: left; }
+.lead { max-width: 72ch; color: var(--ink-2); margin: 4px 0 8px; }
+.stat-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 12px 0 6px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); padding: 10px 12px; }
+.stat-v { font-size: 20px; font-weight: 600; }
+.grid-line { stroke: var(--grid); }
+.base-line { stroke: #c3cdd3; }
+.axis-t { fill: var(--ink-3); font-size: 11px; }
+.bar-v { fill: var(--ink-2); font-size: 11px; }
+input[type="range"] { width: 200px; accent-color: var(--ink); }
+@media (max-width: 1100px) { .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

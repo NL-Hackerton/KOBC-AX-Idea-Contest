@@ -141,3 +141,11 @@ export async function postDecision(body: DecisionBody): Promise<LiveDecision | {
 export function snapshotPart<T>(key: 'evidence' | 'simulate_grid' | 'cii_constants' | 'agent_examples'): T | null {
   return (S[key] as T) ?? null
 }
+
+export async function getSimGrid<T>(): Promise<T | null> {
+  return read<T | null>('/api/simulate/grid', () => (S.simulate_grid as T) ?? null)
+}
+
+export async function postSimulate<T>(body: unknown): Promise<T | null> {
+  return compute<T>('/api/simulate', body)
+}
