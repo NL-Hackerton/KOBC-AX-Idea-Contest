@@ -1,0 +1,14 @@
+[project]
+name = "kjit"
+version = "0.1.0"
+description = "K-JIT: 항만 선석 가용 확률 예측 기반 적시 도착(JIT) 권고 프로토타입"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "numpy>=1.26",
+    "scikit-learn>=1.9.1",
+]
+
+[tool.uv]
+package = false
