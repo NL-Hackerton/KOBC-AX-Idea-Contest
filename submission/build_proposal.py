@@ -102,8 +102,7 @@ def parse_plan(md: str) -> dict[str, list[tuple]]:
             current.append(("table", rows))
             continue
         if m := re.fullmatch(r"!\[(.*?)\]\((.*?)\)", line):
-            # 그림은 한글에서 직접 붙인다. 자리와 원본 파일만 표시한다
-            current.append(("caption", f"[그림 자리: {m.group(1)} — docs/{m.group(2)}]"))
+            current.append(("image", m.group(2)))
         elif m := re.fullmatch(r'<p align="center">(.*)</p>', line):
             current.append(("caption", m.group(1)))
         elif line.startswith("- "):
@@ -123,6 +122,20 @@ def runs_of(text: str) -> list[tuple[str, bool]]:
         if part:
             out.append((part[2:-2], True) if part.startswith("**") and part.endswith("**") else (part, False))
     return out
+
+
+PICTURE_WIDTH_MM = 150
+
+
+def new_picture(doc: HwpxDocument, path: Path):
+    """PNG를 본문 폭에 맞춰 가운데 정렬로 넣고, 그 그림이 든 문단을 돌려준다."""
+    import struct
+
+    data = path.read_bytes()
+    w, h = struct.unpack(">II", data[16:24])  # PNG IHDR
+    obj = doc.add_picture(data, "png", section=doc.sections[0], width_mm=PICTURE_WIDTH_MM,
+                          height_mm=PICTURE_WIDTH_MM * h / w, align="CENTER")
+    return next(a for a in obj.element.iterancestors() if a.tag == f"{{{HP}}}p")
 
 
 def strip_cache(el) -> None:
@@ -247,6 +260,8 @@ def build() -> Path:
             if kind == "table":
                 el = new_table(doc, st, value).element
                 el = next(a for a in el.iterancestors() if a.tag == f"{{{HP}}}p")
+            elif kind == "image":
+                el = new_picture(doc, ROOT / "docs" / value)
             elif kind == "caption":
                 el = new_paragraph(doc, st, st.p_caption, runs_of(re.sub(r"<[^>]+>", "", value)), st.cap, st.cap).element
             elif kind == "bullet":
