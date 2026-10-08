@@ -1,0 +1,178 @@
+{
+ "url": "http://localhost:5173/",
+ "screens": {
+  "ports-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 8715,
+   "errors": []
+  },
+  "decision-replay-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 32775,
+   "errors": []
+  },
+  "decision-live-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 1714,
+   "errors": []
+  },
+  "simulate-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 1462,
+   "errors": []
+  },
+  "evidence-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 2704,
+   "errors": []
+  },
+  "cii-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 866,
+   "errors": []
+  },
+  "agent-contract-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 288,
+   "errors": []
+  },
+  "agent-settle-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 610,
+   "errors": []
+  },
+  "agent-chat-desktop": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 293,
+   "errors": []
+  },
+  "ports-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 8715,
+   "errors": []
+  },
+  "decision-replay-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 32742,
+   "errors": []
+  },
+  "decision-live-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 1714,
+   "errors": []
+  },
+  "simulate-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 1462,
+   "errors": []
+  },
+  "evidence-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 2704,
+   "errors": []
+  },
+  "cii-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 866,
+   "errors": []
+  },
+  "agent-contract-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 288,
+   "errors": []
+  },
+  "agent-settle-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 610,
+   "errors": []
+  },
+  "agent-chat-mobile": {
+   "overflow": 0,
+   "status": "실시간 서버 연결",
+   "text": 293,
+   "errors": []
+  }
+ },
+ "single": {
+  "ports": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 8705,
+   "errors": [],
+   "refusedRequests": 1
+  },
+  "decision-replay": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 32841,
+   "errors": [],
+   "refusedRequests": 1
+  },
+  "decision-live": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)\n· 재생 사례는 2026-08~09 해수부 입출항 신고 실데이터",
+   "text": 1752,
+   "errors": [],
+   "refusedRequests": 3
+  },
+  "simulate": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 1462,
+   "errors": [],
+   "refusedRequests": 4
+  },
+  "evidence": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 2704,
+   "errors": [],
+   "refusedRequests": 5
+  },
+  "cii": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 866,
+   "errors": [],
+   "refusedRequests": 6
+  },
+  "agent-contract": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 298,
+   "errors": [],
+   "refusedRequests": 7
+  },
+  "agent-settle": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 620,
+   "errors": [],
+   "refusedRequests": 7
+  },
+  "agent-chat": {
+   "overflow": 0,
+   "status": "저장본 10/8 17:15 기준 (서버 연결 없음)",
+   "text": 303,
+   "errors": [],
+   "refusedRequests": 7
+  }
+ }
+}

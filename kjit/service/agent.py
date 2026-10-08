@@ -418,6 +418,9 @@ def _chat_rules(q: str, box: Toolbox, now: dt.datetime) -> dict:
 
     if port and any(w in q for w in ("얼마나", "통계", "보통", "평균", "중앙값")) and "대기" in q:
         res, ok = call("wait_statistics", port=port)
+        if ok and res.get("대기 중앙값 h") is None:
+            return {"answer": f"{R.josa(port, '은', '는')} 정박지를 거쳐 접안한 것으로 추정되는 항차가 {int(res.get('대기 추정 항차') or 0)}건뿐이라 대기 통계를 내지 않습니다. "
+                              "대부분 정박지 대기 없이 바로 접안하는 것으로 기록됩니다.", "tools": calls}
         if ok:
             ans = (f"{port}에서 정박지를 거쳐 접안한 화물선 항차의 선석 대기(하한 추정)는 중앙값 {res['대기 중앙값 h']}시간, "
                    f"75% {res['대기 p75 h']}시간, 90% {res['대기 p90 h']}시간이고, 12시간 이상 기다린 항차가 {res['12h 이상 %']}%입니다.")

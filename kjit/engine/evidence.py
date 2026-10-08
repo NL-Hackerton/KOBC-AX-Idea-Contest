@@ -16,6 +16,7 @@ from kjit.service.config import PROC_DIR
 WEB_DIR = PROC_DIR / "web"
 EDGES = [0, 2, 6, 12, 24, 48, 96]
 PORTS = ["대산", "울산", "광양", "여천"]
+MIN_N = 5
 
 
 def wait_section() -> dict:
@@ -27,6 +28,9 @@ def wait_section() -> dict:
         x = w.loc[w["prtAgNm"] == p, "berth_wait_h"].to_numpy()
         counts = np.histogram(x, bins=EDGES + [1e9])[0]
         hist[p] = {"n": int(len(x)), "share": (counts / max(len(x), 1)).round(4).tolist()}
+    # 대기 추정 항차가 5건 미만이면 분포 통계를 내지 않는다 (실측 A 문서의 "-" 와 같은 기준)
+    stat_cols = ["대기 중앙값 h", "대기 p75 h", "대기 p90 h", "12h 이상 %"]
+    summary.loc[summary["대기 추정 항차"] < MIN_N, stat_cols] = np.nan
     rows = summary.replace({np.nan: None}).to_dict("records")
     return {"summary": rows, "hist": {"edges": EDGES, "ports": hist}}
 

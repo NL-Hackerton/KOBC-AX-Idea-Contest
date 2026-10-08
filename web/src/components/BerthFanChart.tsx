@@ -62,7 +62,8 @@ export default function BerthFanChart({ tau, nominal, quantilesH, busy, a0, rta,
   }, [actualFree])
 
   const ticks: number[] = []
-  const stepH = end <= 48 ? 6 : end <= 120 ? 12 : 24
+  // 라벨('10/1 22:00')이 겹치지 않도록 눈금 사이가 80px 이상이 되는 가장 촘촘한 간격을 고른다
+  const stepH = [6, 12, 24, 48, 72, 96, 168].find((s) => x(s) - x(0) >= 80) ?? 168
   for (let h = 0; h <= end; h += stepH) ticks.push(h)
 
   const [hover, setHover] = useState<number | null>(null)

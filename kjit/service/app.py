@@ -336,8 +336,12 @@ def _wait_stats(port: str) -> dict:
     row = df[df["항만"] == port]
     if row.empty:
         raise HTTPException(404, f"대기 통계가 없는 항만입니다: {port}")
-    return {k: (None if pd.isna(v) else v) for k, v in row.iloc[0].to_dict().items()} | {
-        "basis": "2025-10~2026-09 입항분, 같은 선석 선행 선박 출항 기준 하한 추정"}
+    from kjit.engine.evidence import MIN_N
+
+    out = {k: (None if pd.isna(v) else v) for k, v in row.iloc[0].to_dict().items()}
+    if (out.get("대기 추정 항차") or 0) < MIN_N:  # 표본이 너무 적으면 분포 통계를 내지 않는다
+        out.update({k: None for k in ("대기 중앙값 h", "대기 p75 h", "대기 p90 h", "12h 이상 %")})
+    return out | {"basis": "2025-10~2026-09 입항분, 같은 선석 선행 선박 출항 기준 하한 추정"}
 
 
 def toolbox() -> dict:
