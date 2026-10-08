@@ -107,6 +107,8 @@ def parse_plan(md: str) -> dict[str, list[tuple]]:
             current.append(("caption", m.group(1)))
         elif line.startswith("- "):
             current.append(("bullet", line[2:]))
+        elif re.match(r"\s+- ", line):  # 들여쓴 하위 목록
+            current.append(("num", "   – " + line.strip()[2:]))
         elif re.match(r"\d+\. ", line):
             current.append(("num", line))
         else:
@@ -297,6 +299,14 @@ def build() -> Path:
         tc.add_paragraph(line, para_pr_id_ref=st.p_cell, char_pr_id_ref=st.body)
     for o in old:
         o.remove()
+
+    # 대표 Track: 해운 AX (2026-10-08 확정). 양식의 "□ 해운 AX" 표시를 채운다
+    ts = list(body.iter(f"{{{HP}}}t"))
+    for t, nxt in zip(ts, ts[1:] + [None]):
+        if t.text and "□ 해운 AX" in t.text:
+            t.text = t.text.replace("□ 해운 AX", "■ 해운 AX")
+        elif t.text and t.text.strip() == "□" and nxt is not None and (nxt.text or "").strip() == "해운 AX":
+            t.text = t.text.replace("□", "■")
 
     strip_cache(body)
     OUT.parent.mkdir(parents=True, exist_ok=True)
