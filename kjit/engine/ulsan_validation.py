@@ -34,7 +34,7 @@ def _dist(lat1, lon1, lat2, lon2) -> float:
 
 def positions() -> pd.DataFrame:
     with db.session() as con:
-        p = pd.read_sql_query("SELECT callsgn, updt, fetched, lat, lon, sog FROM positions", con)
+        p = pd.read_sql_query("SELECT callsgn, updt, fetched, lat, lon, sog, stts FROM positions", con)
     p["t"] = pd.to_datetime(p["updt"], format="%Y%m%d%H%M%S").dt.tz_localize(KST)
     p["f"] = pd.to_datetime(p["fetched"], format="%Y%m%d%H%M%S").dt.tz_localize(KST)
     # 수집 시각보다 1시간 넘게 오래된 보고는 정지 판정에 쓰지 않는다 (AIS 갱신이 멈춘 배)
@@ -48,9 +48,17 @@ def berthing_time(track: pd.DataFrame, since: pd.Timestamp) -> tuple[pd.Timestam
     stop = tr[tr["sog"].fillna(99) < STOP_KN]
     if stop.empty:
         return None, "정지 관측 없음"
-    a_lat, a_lon = stop["lat"].iloc[0], stop["lon"].iloc[0]
+    first = stop.iloc[0]
+    # AIS 항해 상태(자기 신고)가 있으면 방향을 거른다: 처음부터 계류 중이면 이미 접안한 배,
+    # 새로 멈춘 곳이 앵커링이면 정박지로 나간 것이다. 상태가 비어 있으면 위치만 본다.
+    if "계류" in (first["stts"] or ""):
+        return None, "관측 시작 때 이미 계류"
+    a_lat, a_lon = first["lat"], first["lon"]
     for r in stop.itertuples():
         if _dist(a_lat, a_lon, r.lat, r.lon) > MOVE_M:
+            if "앵커" in (r.stts or ""):
+                a_lat, a_lon = r.lat, r.lon  # 다른 정박지로 옮겼을 뿐이다
+                continue
             return r.t, "이동 관측"
     return None, "아직 정박지(또는 이동 전)"
 
@@ -94,7 +102,7 @@ def main() -> None:
         "lowerBoundHolds": int((gaps >= -0.5).sum()) if len(rows) else 0,
         "gapMedianH": round(float(np.median(gaps)), 1) if len(rows) else None,
         "rows": rows,
-        "method": "실제 접안 = 정박지 정지 위치에서 1.5km 넘게 떨어진 곳의 첫 정지. 하한 성립 = 실제 접안 ≥ 앞 배 출항 − 0.5h(위치 수집 5분 간격·AIS 지연 허용).",
+        "method": "실제 접안 = 정박지 정지 위치에서 1.5km 넘게 떨어진 곳의 첫 정지(AIS 상태가 계류로 시작하거나 앵커링으로 끝나면 제외). 하한 성립 = 실제 접안 ≥ 앞 배 출항 − 0.5h(위치 수집 5분 간격·AIS 지연 허용).",
     }
     (PROC_DIR / "web" / "ulsan_validation.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
     print({k: v for k, v in out.items() if k != "rows"})
