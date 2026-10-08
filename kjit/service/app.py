@@ -228,6 +228,18 @@ def replay_case(case_id: str) -> dict:
     return c
 
 
+@app.get("/api/evidence")
+def evidence() -> dict:
+    from kjit.engine.evidence import validation_section
+
+    p = config.PROC_DIR / "web" / "evidence.json"
+    if not p.exists():
+        raise HTTPException(503, "근거 묶음이 없습니다")
+    out = json.loads(p.read_text())
+    out["validation"] = validation_section()  # 수집 현황은 매번 새로 센다
+    return out
+
+
 class SimulateIn(BaseModel):
     port: str = "전체"
     start: str = "2026-08"

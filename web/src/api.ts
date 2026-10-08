@@ -149,3 +149,7 @@ export async function getSimGrid<T>(): Promise<T | null> {
 export async function postSimulate<T>(body: unknown): Promise<T | null> {
   return compute<T>('/api/simulate', body)
 }
+
+export async function getEvidence<T>(): Promise<T | null> {
+  return read<T | null>('/api/evidence', () => (S.evidence as T) ?? null)
+}

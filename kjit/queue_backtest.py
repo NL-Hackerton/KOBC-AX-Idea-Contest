@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import joblib
@@ -123,6 +124,7 @@ def main() -> None:
     rows = [dict(정보="-", 보정="-", **run("현행 (원래대로 도착)", A0)), dict(정보="-", 보정="-", **run("완전 정보 (상한)", F_true))]
     out_cases = S.copy()
     calib_info = {}
+    coverage = {}
     for info, label in [("public", "공개 데이터만"), ("lineup", "대기 순번 공유"), ("plan", "선석계획 공유")]:
         # 보정 구간 PIT 로 예측 분포를 재보정한다: 수준 a 의 결정 분위수 = PIT_cal 의 a 분위수
         # 결정 시각에 선석이 이미 비어 있던 항차는 예측이 한 점(tau)이라 보정·적중률 계산에서 뺀다
@@ -134,9 +136,12 @@ def main() -> None:
         busy = F_true > hours(S["tau"])
         for tag, lo_q, hi_q in [("원래", 0.1, 0.9), ("재보정", recal(0.1), recal(0.9))]:
             inside = (F_true >= np.quantile(F, lo_q, axis=1)) & (F_true <= np.quantile(F, hi_q, axis=1))
+            coverage.setdefault(info, {})[tag] = round(float(inside[busy].mean()), 3)
             print(f"[{label}·{tag}] 선석이 차 있던 {busy.sum()}건의 80% 구간 적중률 {inside[busy].mean():.3f} (사용 분위수 {lo_q:.3f}~{hi_q:.3f})")
         print(f"[{label}] 보정 PIT: 0 {np.mean(p_cal == 0):.2f}, 1 {np.mean(p_cal == 1):.2f}, n={len(p_cal)}")
-        print(f"[{label}] 선석 가용 시각 MAE(중앙값) {np.mean(np.abs(np.median(F, axis=1) - F_true)):.1f}h, 대기열 평균 길이 {len(M) / len(S):.2f}")
+        mae = float(np.mean(np.abs(np.median(F, axis=1) - F_true)[busy]))
+        coverage[info]["mae_busy_h"] = round(mae, 1)
+        print(f"[{label}] 선석 가용 시각 MAE(중앙값) {mae:.1f}h, 대기열 평균 길이 {len(M) / len(S):.2f}")
         calib_info[info] = {a: recal(a) for a in (0.1, 0.2, 0.3, 0.5, 0.9)}
         for a in (0.5, 0.3, 0.2, 0.1):
             rows.append(dict(정보=label, 보정="재보정", **run(f"위험 수준 {a}", np.quantile(F, recal(a), axis=1))))
@@ -148,6 +153,7 @@ def main() -> None:
     out.to_csv(PROC / "queue_backtest.csv", index=False)
     out_cases.to_parquet(PROC / "queue_backtest_cases.parquet")
     pd.Series({f"{k}_{a}": v for k, d in calib_info.items() for a, v in d.items()}).to_json(PROC / "queue_recalibration.json")
+    (PROC / "queue_coverage.json").write_text(json.dumps(coverage, ensure_ascii=False))
 
 
 if __name__ == "__main__":
