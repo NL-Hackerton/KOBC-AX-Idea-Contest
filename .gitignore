@@ -20,3 +20,4 @@ web/dist/
 web/dist-single/
 data/live/
 data/processed/replay/
+build/

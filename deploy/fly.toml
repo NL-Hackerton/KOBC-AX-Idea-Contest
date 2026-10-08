@@ -1,0 +1,32 @@
+# Fly.io 배포 설정 초안. 호스팅 계정·비용 승인 뒤 app 이름을 정하고 deploy/README.md 순서대로 쓴다.
+app = "kjit-REPLACE"
+primary_region = "nrt"
+
+[env]
+  KJIT_DATA_DIR = "/data"
+  KJIT_INGEST = "1"
+  PORT = "8080"
+  AGENT_DAILY_USD_CAP = "5"
+  # CORS_ORIGINS = "https://nl-hackerton.github.io"
+
+[[mounts]]
+  source = "kjit_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"   # 수집 스케줄러가 계속 돌아야 한다
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "2gb"   # 실측 최고 815MB(컨텍스트 생성), 수집 뒤 재생성 때 두 벌이 겹친다

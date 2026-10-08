@@ -1,0 +1,50 @@
+# 웹 앱을 GitHub Pages로 배포한다. 저장소를 공개로 바꾼 뒤(10/26 예정)에만 수동으로 실행한다.
+# 저장소 변수 KJIT_API_BASE 에 서버 주소(https://...)를 넣으면 실시간 모드, 비우면 저장본 모드로 빌드된다.
+name: pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_API_BASE: ${{ vars.KJIT_API_BASE }}
+      - run: npm run build:single
+        env:
+          VITE_API_BASE: ${{ vars.KJIT_API_BASE }}
+      - run: cp dist-single/index.html dist/k-jit-single.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
