@@ -252,7 +252,17 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
         </label>
         <label className="small muted grow">
           입항 예정 선박 (예측 대상 선석으로 신고된 배 {inbound.length}척){' '}
-          <select value={pick} onChange={(e) => ps && choose(inbound.find((i) => i.id === e.target.value)!, ps)}>
+          <select
+            value={pick}
+            onChange={(e) => {
+              const i = inbound.find((x) => x.id === e.target.value)
+              if (i && ps) choose(i, ps)
+              else {
+                setPick('')
+                setForm((f) => ({ ...f, vessel: '', callsign: '' }))
+              }
+            }}
+          >
             <option value="">직접 입력</option>
             {inbound.map((i) => (
               <option key={i.id} value={i.id}>
