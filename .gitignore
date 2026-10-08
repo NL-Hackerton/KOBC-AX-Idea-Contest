@@ -4,7 +4,7 @@
 # 원본·중간 데이터와 모델 (재현 스크립트로 다시 만든다)
 data/raw/
 data/cache/
-data/processed/*.parquet
+data/processed/**/*.parquet
 data/processed/models/
 data/*.log
 data/*.pid
