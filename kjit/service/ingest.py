@@ -65,22 +65,25 @@ def ingest_calls(now: dt.datetime | None = None) -> int:
                 db.log(con, f"calls:{port}", stamp, True, n, f"{len(items)} items")
             except Exception as e:  # 한 항만 실패가 다른 항만 수집을 막지 않는다
                 db.log(con, f"calls:{port}", stamp, False, 0, str(e))
+            # 항만마다 커밋한다. 다음 항만을 받는 동안 쓰기 잠금을 쥐고 있으면 결정·에이전트 기록이 막힌다
+            con.commit()
     return changed
 
 
 def ingest_positions(now: dt.datetime | None = None) -> int:
     now = now or dt.datetime.now(KST)
     stamp = now.strftime("%Y%m%d%H%M%S")
-    with db.session() as con:
-        try:
-            root = _get(POS_ENDPOINT, {"pageNo": 1, "numOfRows": 1000})
-            rows = [{"fetched": stamp, **{f: it.findtext(f) for f in POS_FIELDS}} for it in root.iter("item")]
-            n = db.insert_positions(con, rows)
-            db.log(con, "positions", now.isoformat(timespec="seconds"), True, n, f"{len(rows)} ships")
-            return n
-        except Exception as e:
+    try:
+        root = _get(POS_ENDPOINT, {"pageNo": 1, "numOfRows": 1000})
+        rows = [{"fetched": stamp, **{f: it.findtext(f) for f in POS_FIELDS}} for it in root.iter("item")]
+    except Exception as e:
+        with db.session() as con:
             db.log(con, "positions", now.isoformat(timespec="seconds"), False, 0, str(e))
-            return 0
+        return 0
+    with db.session() as con:
+        n = db.insert_positions(con, rows)
+        db.log(con, "positions", now.isoformat(timespec="seconds"), True, n, f"{len(rows)} ships")
+    return n
 
 
 def main() -> None:
