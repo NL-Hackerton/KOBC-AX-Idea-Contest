@@ -48,21 +48,31 @@ def parse_item(it: ET.Element) -> dict:
     return row
 
 
+def normalize(df: pd.DataFrame) -> pd.DataFrame:
+    """parse_item 행 묶음을 항차 표로: 중복 제거, 시각·숫자 변환."""
+    df = df.drop_duplicates(subset=["prtAgCd", "etryptYear", "etryptCo", "clsgn"], keep="last").copy()
+    for c in ["in_time", "out_time"]:
+        if c not in df:
+            df[c] = None
+        df[c] = pd.to_datetime(df[c], utc=True, errors="coerce").dt.tz_convert("Asia/Seoul")
+    for c in ["in_planned_out", "out_next_eta"]:
+        if c not in df:
+            df[c] = None
+        df[c] = pd.to_datetime(df[c], errors="coerce")
+        if df[c].dt.tz is None:
+            df[c] = df[c].dt.tz_localize("Asia/Seoul", ambiguous="NaT", nonexistent="NaT")
+    for c in ["in_grtg", "in_intrlGrtg", "in_ldadngTon", "in_crewCo", "in_frgnrCrewCo"]:
+        if c in df:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    return df
+
+
 def main() -> None:
     rows = []
     for f in sorted(glob.glob(str(RAW / "*" / "*.xml"))):
         for it in ET.parse(f).getroot().iter("item"):
             rows.append(parse_item(it))
-    df = pd.DataFrame(rows)
-    df = df.drop_duplicates(subset=["prtAgCd", "etryptYear", "etryptCo", "clsgn"], keep="last")
-
-    for c in ["in_time", "out_time"]:
-        df[c] = pd.to_datetime(df[c], utc=True, errors="coerce").dt.tz_convert("Asia/Seoul")
-    for c in ["in_planned_out", "out_next_eta"]:
-        df[c] = pd.to_datetime(df[c], errors="coerce").dt.tz_localize("Asia/Seoul", ambiguous="NaT", nonexistent="NaT")
-    for c in ["in_grtg", "in_intrlGrtg", "in_ldadngTon", "in_crewCo", "in_frgnrCrewCo"]:
-        if c in df:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
+    df = normalize(pd.DataFrame(rows))
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(OUT, index=False)

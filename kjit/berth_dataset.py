@@ -120,8 +120,9 @@ def samples(occ: pd.DataFrame, queue: dict) -> pd.DataFrame:
     return s
 
 
-def build() -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    df = mw.classify(pd.read_parquet(PROC / "calls.parquet"))
+def build(calls: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """점유 구간·대기 표·정박지 대기열. calls 를 주지 않으면 data/processed/calls.parquet 를 쓴다."""
+    df = mw.classify(calls if calls is not None else pd.read_parquet(PROC / "calls.parquet"))
     occ_tab = mw.multi_occupancy(df)
     single = set(occ_tab.loc[occ_tab["single"], "berth"])
     waits = mw.berth_wait(df, occ_tab)
