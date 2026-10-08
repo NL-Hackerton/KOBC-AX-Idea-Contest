@@ -101,7 +101,10 @@ def parse_plan(md: str) -> dict[str, list[tuple]]:
                 i += 1
             current.append(("table", rows))
             continue
-        if m := re.fullmatch(r'<p align="center">(.*)</p>', line):
+        if m := re.fullmatch(r"!\[(.*?)\]\((.*?)\)", line):
+            # 그림은 한글에서 직접 붙인다. 자리와 원본 파일만 표시한다
+            current.append(("caption", f"[그림 자리: {m.group(1)} — docs/{m.group(2)}]"))
+        elif m := re.fullmatch(r'<p align="center">(.*)</p>', line):
             current.append(("caption", m.group(1)))
         elif line.startswith("- "):
             current.append(("bullet", line[2:]))
@@ -273,7 +276,7 @@ def build() -> Path:
                 box.text = box.text.replace("□", "■")
     tc = opt.cell(3, 1)
     old = list(tc.paragraphs)
-    for line in ["- 웹 앱 URL: (제출 직전 기재)",
+    for line in ["- 웹 앱 URL: https://nl-hackerton.github.io/KOBC-AX-Idea-Contest/ (저장소: https://github.com/NL-Hackerton/KOBC-AX-Idea-Contest)",
                  "- 파일: k-jit.html (서버 연결 없이 열리는 단일 HTML 저장본), k-jit-demo.mp4 (시연 영상)",
                  "※ 로그인, 별도 설치, 권한 승인 없이 확인 가능"]:
         tc.add_paragraph(line, para_pr_id_ref=st.p_cell, char_pr_id_ref=st.body)
