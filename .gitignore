@@ -13,3 +13,8 @@ data/*.pid
 __pycache__/
 .venv/
 .DS_Store
+
+# 웹 프로토타입 빌드 산출물
+web/node_modules/
+web/dist/
+web/dist-single/

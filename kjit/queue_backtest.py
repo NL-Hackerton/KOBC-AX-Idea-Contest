@@ -56,7 +56,7 @@ def inv_cdf(qmat: np.ndarray, u: np.ndarray) -> np.ndarray:
     return np.where(u > 0.9, tail, body)
 
 
-def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info: str) -> tuple[np.ndarray, pd.DataFrame]:
+def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info: str) -> tuple[np.ndarray, pd.DataFrame, np.ndarray]:
     """결정 시각 tau 에서 S가 쓸 선석이 비는 시각 F 의 표본 (len(S), N_SAMPLES).
 
     info="plan": 앞 순번 선박과 도착 예정을 선석계획으로 안다고 가정
@@ -82,7 +82,7 @@ def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info
     tau_s = hours(S["tau"])
     F = np.repeat(tau_s[:, None], N_SAMPLES, axis=1)  # 대기열이 비면 tau 에 이미 선석이 비어 있다
     if M.empty:
-        return F, M
+        return F, M, np.zeros((0, 7))
 
     # 특징과 분위수 예측: 접안 전 원소는 경과 0 으로 평가
     feats = features_at(M[["occ_id", "t"]], occ, queue)
@@ -100,7 +100,7 @@ def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info
             else:
                 t_free = np.maximum(t_free, arr_h[j]) + dur[j]
         F[si] = t_free
-    return F, M
+    return F, M, qmat
 
 
 def cases(waits: pd.DataFrame, sav: pd.DataFrame, lo: pd.Timestamp, hi: pd.Timestamp | None) -> pd.DataFrame:
@@ -150,10 +150,10 @@ def main() -> None:
     for info, label in [("public", "공개 데이터만"), ("lineup", "대기 순번 공유"), ("plan", "선석계획 공유")]:
         # 보정 구간 PIT 로 예측 분포를 재보정한다: 수준 a 의 결정 분위수 = PIT_cal 의 a 분위수
         # 결정 시각에 선석이 이미 비어 있던 항차는 예측이 한 점(tau)이라 보정·적중률 계산에서 뺀다
-        F_cal, _ = simulate(S_cal, occ, queue, bundle, info)
+        F_cal, _, _ = simulate(S_cal, occ, queue, bundle, info)
         busy_cal = hours(S_cal["pred_out"]) > hours(S_cal["tau"])
         p_cal = pit(F_cal[busy_cal], hours(S_cal["pred_out"])[busy_cal])
-        F, M = simulate(S, occ, queue, bundle, info)
+        F, M, _ = simulate(S, occ, queue, bundle, info)
         recal = lambda a: float(np.quantile(p_cal, a))  # noqa: E731
         busy = F_true > hours(S["tau"])
         for tag, lo_q, hi_q in [("원래", 0.1, 0.9), ("재보정", recal(0.1), recal(0.9))]:
