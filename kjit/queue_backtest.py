@@ -29,31 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROC = ROOT / "data" / "processed"
 CALIB_START = pd.Timestamp("2026-06-01", tz="Asia/Seoul")
 TEST_START = pd.Timestamp("2026-08-01", tz="Asia/Seoul")
-N_SAMPLES = 400
-U_KNOTS = np.array([0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0])
-EPOCH = pd.Timestamp("2025-01-01", tz="Asia/Seoul")
-
-
-def hours(ts: pd.Series) -> np.ndarray:
-    """시각을 기준 시점 이후 시간[h]으로 (datetime 해상도와 무관)."""
-    return ((ts - EPOCH).dt.total_seconds() / 3600).to_numpy()
-
-
-def inv_cdf(qmat: np.ndarray, u: np.ndarray) -> np.ndarray:
-    """qmat: (n, 7) 분위수 [0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9], u: (n, k) 균등 표본 → (n, k) 시간 표본.
-
-    0.9 까지는 분위수를 선형으로 잇고, 그 위는 지수 꼬리로 늘인다.
-    꼬리 척도는 지수분포에서 q0.9 - q0.7 = lam * ln 3 이 되도록 정한다.
-    """
-    q10, q20, q70, q90 = qmat[:, 0], qmat[:, 1], qmat[:, 4], qmat[:, 6]
-    lo = np.clip(q10 - (q20 - q10), 0, None)
-    knots = np.column_stack([lo, qmat])
-    body = np.empty_like(u)
-    for i in range(len(qmat)):
-        body[i] = np.interp(u[i], U_KNOTS[:-1], knots[i])
-    lam = np.maximum((q90 - q70) / np.log(3), 1.0)[:, None]
-    tail = q90[:, None] + lam * -np.log(np.clip((1 - u) / 0.1, 1e-9, 1))
-    return np.where(u > 0.9, tail, body)
+from kjit.engine.core import EPOCH, N_SAMPLES, U_KNOTS, hours, inv_cdf  # noqa: E402,F401
 
 
 def simulate(S: pd.DataFrame, occ: pd.DataFrame, queue: dict, bundle: dict, info: str) -> tuple[np.ndarray, pd.DataFrame, np.ndarray]:

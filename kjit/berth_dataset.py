@@ -32,7 +32,7 @@ GRID = "6h"
 HIST_K = 5
 ASSUMED_SHIFT = pd.Timedelta(hours=1)
 
-OCC_COLS = ["prtAgNm", "out_berth", "out_laidupFcltyNm", "clsgn", "group", "vsslKndNm", "in_intrlGrtg", "in_grtg",
+OCC_COLS = ["prtAgNm", "out_berth", "out_laidupFcltyNm", "clsgn", "vsslNm", "etryptYear", "etryptCo", "group", "vsslKndNm", "in_intrlGrtg", "in_grtg",
             "in_ldadngTon", "in_ibobprtNm", "etryptPurpsNm", "vsslNltyCd", "in_tugYn", "in_piltgYn",
             "route", "in_time", "start", "out_time", "start_kind"]
 
@@ -73,6 +73,15 @@ def features_at(pairs: pd.DataFrame, occ: pd.DataFrame, queue: dict, start_overr
     s = pairs.merge(occ, left_on="occ_id", right_index=True, how="left")
     if start_override is not None:
         s["start"] = start_override.to_numpy()
+    return features_rows(s, occ, queue)
+
+
+def features_rows(s: pd.DataFrame, occ: pd.DataFrame, queue: dict) -> pd.DataFrame:
+    """점유 행 형식(OCC_COLS + t, start)의 표에 t 시점 특징을 붙인다.
+
+    occ 는 선석 이력(끝난 점유 구간)으로만 쓰므로, s 에는 occ 에 없는 행(실시간·사용자 입력)도 올 수 있다.
+    """
+    s = s.copy()
     s["elapsed_h"] = ((s["t"] - s["start"]).dt.total_seconds() / 3600).clip(lower=0)
     s["hour"] = s["t"].dt.hour
     s["dow"] = s["t"].dt.dayofweek
@@ -81,7 +90,8 @@ def features_at(pairs: pd.DataFrame, occ: pd.DataFrame, queue: dict, start_overr
 
     s["berth_med_h"] = np.nan
     s["berth_last_h"] = np.nan
-    for b, g in occ.groupby("out_berth"):
+    hist = occ[occ["out_time"].notna()].sort_values("out_time")
+    for b, g in hist.groupby("out_berth"):
         idx = s.index[s["out_berth"] == b]
         if len(idx) == 0:
             continue
