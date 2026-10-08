@@ -1,0 +1,18 @@
+:root {
+  color-scheme: light;
+  --page: #eef3f5;
+  --surface: #ffffff;
+  --ink: #17222d;
+  --ink-2: #4f5c68;
+  --ink-3: #8a949d;
+  --grid: #dde4e8;
+  --line: #d3dce1;
+  --band: #2a78d6;
+  --rta: #c2187b;
+  --wait: #ec835a;
+  --idle: #d03b3b;
+  --good: #0c7a3e;
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-panel: 6px;
+  --r-btn: 4px;
+}
