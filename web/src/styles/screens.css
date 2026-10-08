@@ -18,8 +18,8 @@ main { padding-top: 16px; min-height: 60vh; }
 .toolbar.picker .grow { flex: 1; min-width: 260px; }
 .toolbar select, .form-grid input, .form-grid select { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); max-width: 100%; }
 .seg-wrap { display: flex; flex-direction: column; gap: 4px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); overflow: hidden; }
-.seg button { border: 0; background: transparent; padding: 6px 12px; color: var(--ink-2); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); overflow-x: auto; max-width: 100%; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; color: var(--ink-2); white-space: nowrap; flex: none; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button.on { background: var(--ink); color: #fff; }
 .seg-hint { max-width: 360px; }
@@ -102,7 +102,7 @@ main { padding-top: 16px; min-height: 60vh; }
 .live-note { margin-top: 10px; }
 
 @media (max-width: 1100px) {
-  .decision-grid { grid-template-columns: 1fr; }
+  .decision-grid { grid-template-columns: minmax(0, 1fr); }
   .decision-grid .chart { order: 1; }
   .decision-grid .rec { order: 2; }
   .decision-grid .queue { order: 3; }
@@ -111,7 +111,7 @@ main { padding-top: 16px; min-height: 60vh; }
 @media (max-width: 600px) {
   .app { padding: 0 16px 32px; }
   .status { margin-left: 0; }
-  .reveal-grid { grid-template-columns: 1fr; }
+  .reveal-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .fan-legend { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--ink-2); }
@@ -152,7 +152,7 @@ main { padding-top: 16px; min-height: 60vh; }
 .map .ship.waiting { fill: var(--wait); stroke: #fff; stroke-width: 1.5; }
 .map .ship.other { fill: #b9c6cd; }
 .map .ship.moving { fill: #8fb5e3; }
-@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
 .table-scroll .data-table td, .table-scroll .data-table th { white-space: nowrap; text-align: left; }
 .lead { max-width: 72ch; color: var(--ink-2); margin: 4px 0 8px; }
 .stat-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 12px 0 6px; }
@@ -172,12 +172,12 @@ tr.faint td { color: var(--ink-3); }
 .cii-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; }
 .cii-before { stroke: var(--wait); stroke-width: 2; }
 .cii-after { stroke: var(--band); stroke-width: 2; }
-@media (max-width: 1100px) { .cii-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .cii-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* 계약·정산·에이전트 */
 .agent-status { max-width: 520px; margin: 0 0 4px auto; text-align: right; }
 .agent-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-@media (max-width: 1100px) { .agent-grid { grid-template-columns: 1fr; } .agent-status { margin-left: 0; text-align: left; } }
+@media (max-width: 1100px) { .agent-grid { grid-template-columns: minmax(0, 1fr); } .agent-status { margin-left: 0; text-align: left; } }
 .stack { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .stack select { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); }
 .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -222,3 +222,11 @@ tr.faint td { color: var(--ink-3); }
 .tools code { font-size: 12px; color: var(--ink-2); word-break: break-all; }
 .chat-input { display: flex; gap: 8px; align-items: flex-end; }
 .chat-input textarea { flex: 1; font: 14px/1.5 var(--font); padding: 8px; border: 1px solid var(--line); border-radius: var(--r-btn); resize: vertical; }
+
+/* 좁은 화면: 줄 바꿈 없는 탭과 넓은 표·판은 자기 상자 안에서 가로로 스크롤한다 */
+.seg-wrap { min-width: 0; max-width: 100%; }
+.seg { align-self: flex-start; }
+.board { overflow-x: auto; }
+@media (max-width: 600px) {
+  .panel { min-width: 0; overflow-x: auto; }
+}
