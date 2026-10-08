@@ -68,3 +68,76 @@ export async function compute<T>(path: string, body: unknown): Promise<T | null>
 export function hasServer(): boolean {
   return !!BASE
 }
+
+// ---- 화면별 데이터 함수 ----
+import type { LiveDecision, PortInfo, PortState, ReplayCase, ReplayIndex } from './types'
+
+const S = snapshot as unknown as {
+  meta: { snapshotDate: string | null }
+  ports?: PortInfo[]
+  states?: Record<string, PortState>
+  replay?: ReplayIndex
+  evidence?: unknown
+  simulate_grid?: unknown
+  cii_constants?: unknown
+  agent_examples?: unknown
+}
+
+export const snapshotMeta = S.meta
+
+let replayById: Map<string, ReplayCase> | null = null
+function replayMap() {
+  if (!replayById) replayById = new Map((S.replay?.cases ?? []).map((c) => [c.id, c]))
+  return replayById
+}
+
+/** 재생 사례는 10/28 기준으로 고정된 실측 결과라 항상 내장본을 쓴다 (서버 왕복 없이 즉시 표시). */
+export function replayIndex(): ReplayIndex | null {
+  return S.replay ?? null
+}
+
+export function replayCase(id: string): ReplayCase | undefined {
+  return replayMap().get(id)
+}
+
+export async function getPorts(): Promise<PortInfo[]> {
+  const r = await read<{ ports: PortInfo[] }>('/api/ports', () => ({ ports: S.ports ?? [] }))
+  return r.ports
+}
+
+export async function getPortState(port: string, at?: string): Promise<PortState | null> {
+  const q = at ? `?at=${encodeURIComponent(at)}` : ''
+  return read<PortState | null>(`/api/ports/${encodeURIComponent(port)}/state${q}`, () => (at ? null : S.states?.[port] ?? null))
+}
+
+export interface DecisionBody {
+  port: string
+  berth: string
+  vessel: { vessel: string; callsign: string; group: string; gt: number | null; domestic: boolean }
+  eta: string
+  condition: string
+  lineup?: { vessel: string; group: string; gt: number | null; arrivedAt: string }[]
+  plan?: { vessel: string; group: string; gt: number | null; eta: string }[]
+}
+
+export async function postDecision(body: DecisionBody): Promise<LiveDecision | { error: string }> {
+  if (!BASE) return { error: '실시간 서버가 연결되어 있지 않아 저장본만 볼 수 있습니다.' }
+  try {
+    const res = await fetch(`${BASE}/api/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    if (!res.ok) return { error: data.detail ?? `요청 실패 (${res.status})` }
+    setMode('live')
+    return data as LiveDecision
+  } catch {
+    setMode('snapshot')
+    return { error: '실시간 서버에 연결할 수 없습니다. 저장본 화면을 이용해 주세요.' }
+  }
+}
+
+export function snapshotPart<T>(key: 'evidence' | 'simulate_grid' | 'cii_constants' | 'agent_examples'): T | null {
+  return (S[key] as T) ?? null
+}
