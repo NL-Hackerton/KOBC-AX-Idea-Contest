@@ -169,3 +169,7 @@ input[type="range"] { width: 200px; accent-color: var(--ink); }
 .limits { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 tr.faint td { color: var(--ink-3); }
 @media (max-width: 1100px) { .hist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cii-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; }
+.cii-before { stroke: var(--wait); stroke-width: 2; }
+.cii-after { stroke: var(--band); stroke-width: 2; }
+@media (max-width: 1100px) { .cii-grid { grid-template-columns: 1fr; } }

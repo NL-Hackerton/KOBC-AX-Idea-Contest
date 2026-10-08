@@ -240,6 +240,13 @@ def evidence() -> dict:
     return out
 
 
+@app.get("/api/cii/constants")
+def cii_constants() -> dict:
+    from kjit.engine.cii import constants
+
+    return constants()
+
+
 class SimulateIn(BaseModel):
     port: str = "전체"
     start: str = "2026-08"

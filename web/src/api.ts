@@ -153,3 +153,7 @@ export async function postSimulate<T>(body: unknown): Promise<T | null> {
 export async function getEvidence<T>(): Promise<T | null> {
   return read<T | null>('/api/evidence', () => (S.evidence as T) ?? null)
 }
+
+export async function getCiiConstants<T>(): Promise<T | null> {
+  return read<T | null>('/api/cii/constants', () => (S.cii_constants as T) ?? null)
+}
