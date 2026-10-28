@@ -236,3 +236,52 @@ tr.faint td { color: var(--ink-3); }
 select { overflow: hidden; }
 .toolbar.picker .grow select, .stack select { width: 100%; min-width: 0; }
 .toolbar.picker label { min-width: 0; max-width: 100%; }
+
+/* ---------------------------------------------------------------- 2026-10 visual refresh
+   Reference direction: map-first maritime dashboards (voyage card on map, KPI cards,
+   progressive disclosure) and calm enterprise surfaces. Overrides only; structure unchanged. */
+body { font-size: 15px; letter-spacing: -0.005em; }
+.app { max-width: 1320px; padding: 0 24px 48px; }
+.top {
+  position: sticky; top: 0; z-index: 20; margin: 0 -24px; padding: 12px 24px;
+  background: rgba(244, 246, 250, 0.82); backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.brand-name { font-weight: 700; letter-spacing: -0.01em; }
+nav { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; box-shadow: var(--shadow-1); }
+nav button { border-radius: 999px; padding: 6px 14px; font-weight: 500; }
+nav button:hover { background: var(--surface-2); color: var(--ink); }
+nav button.on { background: var(--ink); color: #fff; box-shadow: none; }
+.status { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+main { padding-top: 24px; }
+
+.panel, .case-head {
+  border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--shadow-1);
+  padding: 18px 20px;
+}
+.panel h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 10px; }
+.case-head h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.decision-grid { gap: 16px; }
+
+.btn { border-radius: var(--r-btn); padding: 8px 14px; font-weight: 500; transition: background .15s, border-color .15s, box-shadow .15s; }
+.btn:hover { border-color: var(--ink-3); box-shadow: var(--shadow-1); }
+.btn.primary { background: var(--band); border-color: var(--band); color: #fff; }
+.btn.primary:hover { background: #185ccc; }
+.btn:disabled, .btn:disabled:hover { opacity: 1; background: var(--grid); border-color: var(--grid); color: var(--ink-3); box-shadow: none; }
+
+.seg { border-radius: 12px; padding: 3px; background: var(--surface-2); gap: 2px; }
+.seg button { border-radius: 9px; padding: 6px 14px; font-weight: 500; }
+.seg button + button { border-left: 0; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
+
+.toolbar select, .form-grid input, .form-grid select, .doc-input {
+  border-radius: var(--r-btn); border-color: var(--line); padding: 8px 10px; background: var(--surface);
+}
+.toolbar select:focus, .form-grid input:focus, .doc-input:focus { outline: none; border-color: var(--band); box-shadow: 0 0 0 3px var(--band-soft); }
+
+.data-table thead th { color: var(--ink-2); font-weight: 600; background: var(--surface-2); }
+.data-table tbody tr:hover { background: var(--surface-2); }
+.notice { border-radius: var(--r-btn); }
+.send-checks { background: var(--surface-2); border-radius: var(--r-btn); padding: 10px 12px; }
+.agent-note pre { border-radius: var(--r-btn); }
+.foot { border-top: 0; color: var(--ink-3); }
