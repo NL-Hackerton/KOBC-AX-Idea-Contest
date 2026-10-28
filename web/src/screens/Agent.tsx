@@ -426,6 +426,16 @@ function DraftTab({ state, dispatch }: { state: AppState; dispatch: (a: Action) 
       </p>
       {p.delayH < 0.05 && <p className="small muted">늦춤이 없는 권고라 지시문·요청서 대신 설명만 만듭니다.</p>}
       <AgentNote summary={s} exampleKey={cur.key} showDrafts={p.delayH >= 0.05} />
+      <h3 style={{ marginTop: 20 }}>항차 후 기록</h3>
+      <p className="small muted">실제 접안 시각이 신고되면 예측과 비교해 남기고, 항차별 절감 실적을 쌓습니다.</p>
+      <table className="data-table small num">
+        <thead>
+          <tr><th>항차</th><th>권고 도착</th><th>실제 접안</th><th>예측 P50 대비</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>{s.vessel || '직접 입력 선박'} · {s.berth}</td><td>{fmtDT(p.rta)}</td><td>기록 대기</td><td>-</td></tr>
+        </tbody>
+      </table>
     </section>
   )
 }

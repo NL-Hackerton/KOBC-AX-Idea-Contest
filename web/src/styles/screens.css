@@ -141,7 +141,9 @@ main { padding-top: 16px; min-height: 60vh; }
 .board .pred-med { stroke: var(--band); stroke-width: 2; }
 .board .declared { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
 .board .actual { fill: var(--ink); }
-.board .occ-label { font-size: 11px; fill: var(--ink); }
+.board .occ-label { font-size: 11px; fill: var(--ink); paint-order: stroke; stroke: var(--surface, #fff); stroke-width: 3px; stroke-linejoin: round; }
+.send-checks { border: 0; padding: 0; margin: 10px 0; display: grid; gap: 4px; }
+.send-checks label { display: flex; gap: 6px; align-items: center; }
 .k-occ { background: #9fb0bb; border-radius: 2px; }
 .k-dot-decl { width: 8px !important; height: 8px !important; border-radius: 50%; border: 1.5px solid var(--ink-2); }
 .k-dot-act { width: 8px !important; height: 8px !important; border-radius: 50%; background: var(--ink); }

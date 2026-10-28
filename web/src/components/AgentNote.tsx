@@ -4,6 +4,12 @@ import type { AgentMeta, DecisionSummary, DraftResult, ExplainResult } from '../
 import GenBadge from './GenBadge'
 
 type Kind = 'explain' | 'master' | 'charterer'
+
+// 보내기 전에 사람이 확인할 항목. 모두 체크해야 문안을 복사할 수 있다.
+const CHECKS: Record<'master' | 'charterer', string[]> = {
+  master: ['권고 도착 시각이 항차 결정 화면과 같다', '위험 수준과 근거 분포를 확인했다', '선장에게 보낼 채널을 정했다'],
+  charterer: ['인용한 계약 조항 원문을 확인했다', '정산 금액이 정산 계산기 결과와 같다', '용선자 담당자를 확인했다'],
+}
 type Out = { meta: AgentMeta; offline: boolean; text?: string; ko?: string; en?: string } | { error: string }
 
 /** 권고 설명과 지시문·요청서. 서버가 없으면 저장된 예시(대표 사례)로 보여준다. */
@@ -13,6 +19,7 @@ export default function AgentNote({ summary, exampleKey, showDrafts }: { summary
   const [cache, setCache] = useState<Record<string, Out>>({})
   const [busy, setBusy] = useState(false)
   const [lang, setLang] = useState<'ko' | 'en'>('ko')
+  const [checked, setChecked] = useState<Record<string, boolean>>({})
 
   async function run(kind: Kind) {
     if (open === kind) return setOpen(null)
@@ -64,9 +71,27 @@ export default function AgentNote({ summary, exampleKey, showDrafts }: { summary
               <div className="lang-switch small">
                 <button className={lang === 'ko' ? 'on' : ''} onClick={() => setLang('ko')}>한국어</button>
                 <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>English</button>
-                <button className="link" onClick={() => navigator.clipboard?.writeText((lang === 'ko' ? cur.ko : cur.en) ?? '')}>복사</button>
               </div>
               <pre>{lang === 'ko' ? cur.ko : cur.en}</pre>
+              <fieldset className="send-checks">
+                <legend className="small muted">보내기 전 확인</legend>
+                {CHECKS[open].map((c, i) => {
+                  const id = `${sig}|${open}|${i}`
+                  return (
+                    <label key={id} className="small">
+                      <input type="checkbox" checked={!!checked[id]} onChange={(e) => setChecked((m) => ({ ...m, [id]: e.target.checked }))} /> {c}
+                    </label>
+                  )
+                })}
+              </fieldset>
+              {(() => {
+                const ready = CHECKS[open].every((_, i) => checked[`${sig}|${open}|${i}`])
+                return (
+                  <button className="btn primary" disabled={!ready} onClick={() => navigator.clipboard?.writeText((lang === 'ko' ? cur.ko : cur.en) ?? '')}>
+                    {ready ? '확인했고 복사하기' : '확인 항목을 모두 체크하면 복사할 수 있습니다'}
+                  </button>
+                )
+              })()}
             </>
           )}
         </div>
