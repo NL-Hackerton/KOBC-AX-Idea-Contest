@@ -171,6 +171,43 @@ export function agentExamples(): AgentExamples | null {
   return (S.agent_examples as AgentExamples) ?? null
 }
 
+export interface SearchHit {
+  label: string
+  hint: string
+  port: string
+  caseId?: string
+  shipId?: string
+}
+
+/** 저장본의 재생 항차·입항 예정에서 선박·선석·항만을 찾는다. 서버 계약은 바꾸지 않는다. */
+export function searchLocal(q: string): SearchHit[] {
+  const s = q.trim().toLowerCase()
+  if (s.length < 1) return []
+  const hits: SearchHit[] = []
+  const seen = new Set<string>()
+  for (const c of S.replay?.cases ?? []) {
+    const blob = `${c.vessel} ${c.berth} ${c.port} ${c.callsign}`.toLowerCase()
+    if (!blob.includes(s)) continue
+    const k = `c:${c.id}`
+    if (seen.has(k)) continue
+    seen.add(k)
+    hits.push({ label: c.vessel, hint: `${c.port} → ${c.berth}`, port: c.port, caseId: c.id })
+    if (hits.length >= 8) return hits
+  }
+  for (const [port, st] of Object.entries(S.states ?? {})) {
+    for (const i of st.inbound) {
+      const blob = `${i.vessel} ${i.facility} ${i.callsign} ${port}`.toLowerCase()
+      if (!blob.includes(s)) continue
+      const k = `i:${i.id}`
+      if (seen.has(k)) continue
+      seen.add(k)
+      hits.push({ label: i.vessel, hint: `${port} · ${i.facility}`, port, shipId: i.id })
+      if (hits.length >= 8) return hits
+    }
+  }
+  return hits
+}
+
 /** 에이전트 호출. LLM 응답은 길게 걸릴 수 있어 90초까지 기다린다. 서버가 없으면 error 를 돌려준다. */
 export async function postAgent<T>(kind: 'contract' | 'lineup' | 'explain' | 'draft' | 'chat', body: unknown): Promise<T | { error: string }> {
   if (!BASE) return { error: 'no-server' }
