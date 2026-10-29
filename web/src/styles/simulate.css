@@ -1,0 +1,99 @@
+.screen.simulate {
+  --sim-public: #86b6ef;
+  --sim-lineup: #3987e5;
+  --sim-plan: #1c5cab;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+:root[data-theme="dark"] .screen.simulate {
+  --sim-public: #365f96;
+  --sim-lineup: #3d8bff;
+  --sim-plan: #91bfff;
+}
+.screen.simulate .page-head { align-items: flex-end; }
+.screen.simulate .page-head-right { margin-left: auto; }
+.screen.simulate .page-head-text { max-width: 760px; }
+.screen.simulate .sim-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 24px; }
+.screen.simulate .seg-wrap { gap: 8px; }
+.screen.simulate .sim-condition .seg button { display: inline-flex; align-items: center; gap: 6px; }
+.screen.simulate .sim-condition .seg button::before { content: ''; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--sim-public); }
+.screen.simulate .sim-condition .seg button:nth-of-type(2)::before { background: var(--sim-lineup); }
+.screen.simulate .sim-condition .seg button:nth-of-type(3)::before { background: var(--sim-plan); }
+.screen.simulate .sim-participation { width: 208px; }
+.screen.simulate .sim-participation input { width: 100%; height: 4px; margin: 10px 0; border: 0; padding: 0; border-radius: 999px; appearance: none; background: linear-gradient(var(--band), var(--band)) no-repeat var(--line); accent-color: var(--band); cursor: pointer; }
+.screen.simulate .sim-participation input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border: 2px solid var(--band); border-radius: 50%; background: var(--surface); transition: box-shadow 160ms; }
+.screen.simulate .sim-participation input::-moz-range-thumb { width: 12px; height: 12px; border: 2px solid var(--band); border-radius: 50%; background: var(--surface); }
+.screen.simulate .sim-participation input:focus-visible { outline: 2px solid var(--band); outline-offset: 7px; }
+.screen.simulate .sim-participation input:hover::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--band-soft); }
+.screen.simulate .sim-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.screen.simulate .sim-kpis .kpi { padding: 16px; gap: 8px; min-width: 0; }
+.screen.simulate .sim-kpis .kpi-head { min-height: 18px; }
+.screen.simulate .sim-kpis .kpi-label { font-size: 12px; line-height: 18px; }
+.screen.simulate .sim-kpis .kpi-value { gap: 4px; white-space: nowrap; }
+.screen.simulate .sim-kpis .kpi-value strong { font-size: 22px; line-height: 30px; letter-spacing: -.5px; }
+.screen.simulate .sim-kpis .kpi:nth-child(3) .kpi-value strong { font-size: 20px; letter-spacing: -.8px; }
+.screen.simulate .sim-kpis .kpi-unit { font-size: 14px; }
+.screen.simulate .sim-kpis .kpi-sub { margin: 0; }
+.screen.simulate .sim-kpis .kpi:nth-child(2) { --i: 1; }
+.screen.simulate .sim-kpis .kpi:nth-child(3) { --i: 2; }
+.screen.simulate .sim-kpis .kpi:nth-child(4) { --i: 3; }
+.screen.simulate .sim-kpis .kpi:nth-child(5) { --i: 4; }
+.screen.simulate .sim-note { margin: 0; }
+.screen.simulate .sim-ladder, .screen.simulate .sim-hist, .screen.simulate .sim-berths { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.screen.simulate .card-head { margin: 0; }
+.screen.simulate .sim-chart { position: relative; min-width: 0; }
+.screen.simulate .sim-chart-scroll { width: 100%; overflow-x: auto; }
+.screen.simulate svg { display: block; overflow: visible; }
+.screen.simulate .axis-t, .screen.simulate .bar-v { fill: var(--ink-2); font-size: 12px; font-family: var(--font); }
+.screen.simulate .selected .bar-v { fill: var(--ink); }
+.screen.simulate .grid-line, .screen.simulate .base-line { stroke: var(--line); stroke-width: 1; }
+.screen.simulate .sim-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; list-style: none; padding: 0; margin: 16px 0; color: var(--ink-2); }
+.screen.simulate .sim-legend li { display: flex; align-items: center; gap: 6px; }
+.screen.simulate .sim-legend .k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.screen.simulate .sim-readout { margin: 0; min-height: 18px; }
+.screen.simulate .sim-chart-tooltip { position: absolute; z-index: 3; right: 12px; top: 4px; max-width: min(360px, 90%); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-2); color: var(--ink); border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 20px; pointer-events: none; }
+.screen.simulate .sim-bar { outline: none; }
+.screen.simulate .sim-bar-fill { transform-box: fill-box; transform-origin: center bottom; animation: sim-bar-grow 650ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 35ms); transition: filter 160ms, stroke 160ms; }
+.screen.simulate .sim-bar:hover .sim-bar-fill, .screen.simulate .sim-bar:focus .sim-bar-fill { filter: brightness(1.13); stroke: var(--ink); stroke-width: 1.5; }
+.screen.simulate .sim-bottom { display: grid; grid-template-columns: minmax(0, 480fr) minmax(0, 636fr); gap: 20px; align-items: start; }
+.screen.simulate .sim-hist-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.screen.simulate .sim-hist-stats > div { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.screen.simulate .sim-hist-stats span { color: var(--ink-2); font-size: 12px; line-height: 18px; }
+.screen.simulate .sim-hist-stats strong { font-size: 16px; line-height: 24px; white-space: nowrap; }
+.screen.simulate .sim-hist-stats strong span { font-size: inherit; line-height: inherit; color: inherit; }
+.screen.simulate .sim-hist > p { margin: 0; }
+.screen.simulate .sim-table-scroll { overflow-x: auto; }
+.screen.simulate .sim-berths .data-table { font-size: 13px; line-height: 22px; white-space: nowrap; }
+.screen.simulate .sim-berths .data-table th, .screen.simulate .sim-berths .data-table td { padding: 6px 8px; text-align: right; }
+.screen.simulate .sim-berths .data-table th:first-child, .screen.simulate .sim-berths .data-table td:first-child { text-align: left; }
+.screen.simulate .sim-berths .data-table th { font-size: 12px; font-weight: 400; background: transparent; }
+@keyframes sim-bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@media (max-width: 1200px) {
+  .screen.simulate .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .screen.simulate .sim-bottom { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .screen.simulate .page-head { align-items: flex-start; flex-direction: column; }
+  .screen.simulate .page-head-text { flex: 0 1 auto; }
+  .screen.simulate .sim-controls { padding: 16px; gap: 20px; }
+  .screen.simulate .sim-controls > *, .screen.simulate .sim-condition > .seg-wrap { width: 100%; min-width: 0; }
+  .screen.simulate .sim-controls .seg { width: 100%; }
+  .screen.simulate .sim-controls .seg button { flex: 1; padding-left: 8px; padding-right: 8px; }
+  .screen.simulate .sim-condition .seg { flex-wrap: wrap; }
+  .screen.simulate .sim-condition .seg button { font-size: 12px; gap: 4px; }
+  .screen.simulate .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .screen.simulate .sim-kpis .kpi:nth-child(3) { grid-column: 1 / -1; }
+  .screen.simulate .sim-kpis .kpi { padding: 14px; }
+  .screen.simulate .page-head-right { margin-left: 0; }
+  .screen.simulate .sim-kpis .kpi-label { font-size: 11px; }
+  .screen.simulate .sim-kpis .kpi-value strong { font-size: 20px; }
+  .screen.simulate .sim-ladder, .screen.simulate .sim-hist, .screen.simulate .sim-berths { padding: 16px; }
+  .screen.simulate .sim-ladder .card-head { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .screen.simulate .sim-hist-stats > div { padding: 10px 8px; }
+  .screen.simulate .sim-hist-stats strong { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen.simulate .sim-bar-fill { animation: none; transition: none; }
+}

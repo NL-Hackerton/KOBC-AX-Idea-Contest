@@ -1,0 +1,140 @@
+.screen.ports { display: flex; flex-direction: column; gap: 20px; }
+.screen.ports .ports-time { display: flex; align-items: center; gap: 10px; }
+.screen.ports .ports-time input { width: auto; }
+.screen.ports .ports-loading { height: 420px; border-radius: var(--r-card); }
+.screen.ports .ports-snapshot-note { margin: -8px 0 0; color: var(--ink-3); font-size: 11px; }
+.screen.ports .ports-map { height: 420px; position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--map-water); isolation: isolate; }
+.screen.ports .ports-map-svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.screen.ports .ports-map-svg:active { cursor: grabbing; }
+.screen.ports .ports-map svg text { font-family: var(--font); font-size: 12px; fill: var(--ink); }
+.screen.ports .ports-anchorage-fill { fill: var(--wait); opacity: .09; }
+.screen.ports .ports-map .ports-anchorage-label { fill: var(--wait); }
+.screen.ports .ports-dot { cursor: pointer; outline: none; }
+.screen.ports .ports-dot-hit { fill: transparent; }
+.screen.ports .ports-dot-mark { stroke: var(--surface); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: ports-dot-in .5s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.screen.ports .ports-dot.berthed .ports-dot-mark { fill: var(--good); }
+.screen.ports .ports-dot.waiting .ports-dot-mark { fill: var(--wait); }
+.screen.ports .ports-dot.moving .ports-dot-mark { fill: var(--band); stroke-width: 0; opacity: .85; }
+.screen.ports .ports-dot.other .ports-dot-mark { fill: var(--ink-3); stroke-width: 0; opacity: .65; }
+.screen.ports .ports-dot:hover .ports-dot-mark, .screen.ports .ports-dot:focus .ports-dot-mark, .screen.ports .ports-dot.selected .ports-dot-mark { stroke: var(--band); stroke-width: 3; filter: drop-shadow(0 0 3px var(--surface)); }
+.screen.ports .ports-berth-marker > rect:first-child { fill: var(--band-soft); stroke: var(--band); stroke-width: 1.5; }
+.screen.ports .ports-map-label-bg { fill: var(--surface); stroke: var(--line); }
+.screen.ports .ports-map-callout > rect { fill: var(--surface); stroke: var(--line); }
+.screen.ports .ports-map-callout > path { fill: none; stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 160; stroke-dashoffset: 160; animation: ports-line-in .8s .2s var(--ease-out) forwards; }
+.screen.ports .ports-map .detail { fill: var(--ink-2); font-size: 11px; }
+.screen.ports .ports-focus-marker > path { fill: none; stroke: var(--band); stroke-width: 1.8; stroke-dasharray: 6 4; }
+.screen.ports .ports-focus-marker > circle { fill: var(--band); stroke: var(--surface); stroke-width: 2; }
+.screen.ports .ports-focus-marker > circle.halo { fill: var(--band-soft); stroke: var(--band); opacity: .35; }
+.screen.ports .ports-focus-marker > rect { fill: var(--surface); stroke: var(--band); stroke-width: 1.5; }
+.screen.ports .ports-focus-marker > text:not(.detail) { fill: var(--band); }
+.screen.ports .ports-focus-card { position: absolute; left: 20px; top: 20px; width: 300px; padding: 16px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-2); animation: ports-card-in .25s var(--ease-out) both; }
+.screen.ports .ports-focus-title { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.screen.ports .ports-focus-title > strong { font-size: 16px; line-height: 24px; overflow-wrap: anywhere; }
+.screen.ports .ports-focus-title .chip-soft { padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.screen.ports .ports-focus-card dl { display: grid; gap: 10px; margin: 10px 0; }
+.screen.ports .ports-focus-card dl > div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 18px; }
+.screen.ports .ports-focus-card dt { color: var(--ink-2); flex-shrink: 0; }
+.screen.ports .ports-focus-card dd { margin: 0; text-align: right; font-weight: 500; }
+.screen.ports .ports-focus-card .btn { min-height: 40px; justify-content: center; gap: 8px; }
+.screen.ports .ports-focus-hint { color: var(--ink-2); font-size: 11px; margin: 10px 0 0; }
+.screen.ports .ports-zoom { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; background: var(--surface); box-shadow: var(--shadow-2); border-radius: 10px; overflow: hidden; }
+.screen.ports .ports-zoom button { width: 32px; height: 32px; background: transparent; border: 0; color: var(--ink-2); font-size: 20px; cursor: pointer; }
+.screen.ports .ports-zoom button:hover { background: var(--band-soft); color: var(--band); }
+.screen.ports .ports-north { position: absolute; top: 102px; right: 21px; display: flex; flex-direction: column; align-items: center; width: 30px; background: transparent; border: 0; color: var(--ink); cursor: pointer; padding: 0; gap: 4px; font-size: 12px; }
+.screen.ports .ports-scale { position: absolute; bottom: 16px; right: 20px; display: flex; align-items: center; flex-direction: column; color: var(--ink); font-size: 11px; gap: 3px; }
+.screen.ports .ports-scale i { display: block; height: 6px; width: 34px; border: solid var(--ink); border-width: 0 1.5px 1.5px; }
+.screen.ports .ports-map-legend { position: absolute; left: 20px; bottom: 20px; max-width: 420px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-2); color: var(--ink-2); font-size: 11px; line-height: 18px; }
+.screen.ports .ports-map-legend > span, .screen.ports .ports-board-legend > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.screen.ports .ports-map-legend i { display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.screen.ports .ports-map-legend i.berthed { background: var(--good); }
+.screen.ports .ports-map-legend i.waiting { background: var(--wait); }
+.screen.ports .ports-map-legend i.moving { background: var(--band); width: 6px; height: 6px; }
+.screen.ports .ports-map-legend i.berth { background: transparent; border: 1.5px solid var(--band); border-radius: 1px; width: 10px; height: 10px; }
+.screen.ports .ports-map-legend i.area { background: transparent; border: 1.5px dashed var(--wait); border-radius: 2px; width: 14px; height: 10px; }
+.screen.ports .ports-map-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; color: var(--ink-2); background: var(--surface-2); }
+.screen.ports .ports-map-empty strong { font-size: 16px; color: var(--ink); }
+.screen.ports .ports-map-empty p { margin: 0; font-size: 12px; line-height: 1.9; }
+.screen.ports .ports-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.screen.ports .ports-kpis .kpi { min-width: 0; }
+.screen.ports .ports-bottom { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(350px, 1fr); gap: 20px; align-items: start; }
+.screen.ports .ports-board-card, .screen.ports .ports-arrivals { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.screen.ports .ports-board-scroll { width: 100%; overflow-x: auto; overflow-y: hidden; }
+.screen.ports .ports-board-scroll svg { display: block; }
+.screen.ports .ports-grid { stroke: var(--line); stroke-width: 1; }
+.screen.ports .ports-now { stroke: var(--ink); stroke-width: 1.5; }
+.screen.ports .ports-axis { font: 11px var(--font); fill: var(--ink-2); }
+.screen.ports .ports-axis.current { fill: var(--ink); }
+.screen.ports .ports-row-label { font: 11px var(--font); fill: var(--ink); }
+.screen.ports .ports-occ { fill: var(--chart-occupied); }
+.screen.ports .ports-pred { fill: var(--chart-remaining); }
+.screen.ports .ports-median { stroke: var(--band); stroke-width: 2; }
+.screen.ports .ports-declared { fill: var(--wait); stroke: var(--surface); stroke-width: 1.5; }
+.screen.ports .ports-actual { fill: var(--good); stroke: var(--surface); stroke-width: 1.5; }
+.screen.ports .ports-label-bg { fill: var(--surface); fill-opacity: .92; }
+.screen.ports .ports-vessel-label { font: 11px var(--font); fill: var(--ink); }
+.screen.ports .ports-board-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 11px; color: var(--ink-2); }
+.screen.ports .ports-board-legend i { display: block; width: 14px; height: 10px; border-radius: 2px; }
+.screen.ports .ports-board-legend .occupied { background: var(--chart-occupied); }
+.screen.ports .ports-board-legend .remaining { background: var(--chart-remaining); height: 8px; }
+.screen.ports .ports-board-legend .median { background: var(--band); width: 2px; height: 12px; border-radius: 0; }
+.screen.ports .ports-board-legend .declared, .screen.ports .ports-board-legend .actual { background: var(--wait); width: 7px; height: 7px; border-radius: 50%; }
+.screen.ports .ports-board-legend .actual { background: var(--good); }
+.screen.ports .ports-all-berths { align-self: flex-end; background: transparent; border: 0; color: var(--ink-2); font: 11px var(--font); padding: 0; cursor: pointer; }
+.screen.ports .ports-all-berths:hover { color: var(--band); }
+.screen.ports .ports-arrivals > p { margin: 0; }
+.screen.ports .ports-count { font-size: 12px; color: var(--band); font-weight: 500; white-space: nowrap; }
+.screen.ports .ports-list-scroll { height: 380px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.screen.ports .ports-inbound-row { display: flex; align-items: center; gap: 8px; min-height: 60px; border-bottom: 1px solid var(--line); transition: background .15s; }
+.screen.ports .ports-inbound-row:hover, .screen.ports .ports-inbound-row.selected { background: color-mix(in srgb, var(--band-soft) 40%, transparent); }
+.screen.ports .ports-select-vessel { flex: 1; display: flex; gap: 12px; align-items: center; text-align: left; min-width: 0; align-self: stretch; color: var(--ink); padding: 9px 0; border: 0; background: transparent; cursor: pointer; }
+.screen.ports .ports-select-vessel time { width: 72px; flex-shrink: 0; color: var(--ink-2); font-size: 11px; white-space: nowrap; }
+.screen.ports .ports-select-vessel > span { display: flex; flex-direction: column; min-width: 0; }
+.screen.ports .ports-select-vessel strong { font-weight: 500; font-size: 13px; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.screen.ports .ports-select-vessel small { font-size: 11px; line-height: 18px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.screen.ports .ports-inbound-row .chip-soft { border: 0; padding: 4px 10px; white-space: nowrap; font-size: 11px; cursor: pointer; }
+.screen.ports .ports-inbound-row .chip-soft:hover { background: var(--band); color: var(--on-band); }
+.screen.ports .ports-list-tabs { display: flex; gap: 16px; padding-top: 3px; }
+.screen.ports .ports-list-tabs button { border: 0; background: transparent; color: var(--ink-2); font: 11px var(--font); padding: 4px 0; cursor: pointer; }
+.screen.ports .ports-list-tabs button.active { color: var(--band); box-shadow: 0 1px 0 var(--band); }
+.screen.ports .ports-list-scroll td small { display: block; color: var(--ink-2); font-size: 10px; margin-top: 3px; }
+.screen.ports .ports-wait-select { background: transparent; padding: 0; border: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
+.screen.ports .ports-wait-select:hover { color: var(--band); }
+.screen.ports .ports-list-empty { font-size: 12px; color: var(--ink-2); padding: 24px 0; }
+@keyframes ports-dot-in { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+@keyframes ports-line-in { to { stroke-dashoffset: 0; } }
+@keyframes ports-card-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 1200px) {
+  .screen.ports .ports-bottom { grid-template-columns: minmax(0, 1.5fr) minmax(310px, 1fr); }
+  .screen.ports .ports-arrivals, .screen.ports .ports-board-card { padding: 16px; }
+  .screen.ports .ports-select-vessel { gap: 8px; }
+  .screen.ports .ports-select-vessel time { width: 62px; }
+}
+@media (max-width: 1050px) {
+  .screen.ports .ports-bottom { grid-template-columns: minmax(0, 1fr); }
+  .screen.ports .ports-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .screen.ports .ports-list-scroll { height: 340px; }
+}
+@media (max-width: 600px) {
+  .screen.ports .page-head { align-items: flex-start; gap: 14px; }
+  .screen.ports .page-head-right { width: 100%; }
+  .screen.ports .ports-map { height: 590px; }
+  .screen.ports .ports-map-svg { height: 340px; position: absolute; left: 0; bottom: 0; }
+  .screen.ports .ports-focus-card { top: 12px; left: 12px; width: calc(100% - 64px); padding: 12px; }
+  .screen.ports .ports-focus-title > strong { font-size: 14px; }
+  .screen.ports .ports-focus-card dl { gap: 7px; }
+  .screen.ports .ports-map-legend { left: 10px; right: 10px; bottom: 10px; gap: 3px 9px; padding: 8px; font-size: 10px; }
+  .screen.ports .ports-zoom { right: 10px; top: 12px; }
+  .screen.ports .ports-north { right: 10px; }
+  .screen.ports .ports-scale { bottom: 92px; right: 12px; }
+  .screen.ports .ports-kpis { gap: 10px; }
+  .screen.ports .ports-kpis .kpi { padding: 14px; }
+  .screen.ports .ports-kpis .kpi-label { font-size: 12px; }
+  .screen.ports .ports-kpis .kpi-head { gap: 6px; }
+  .screen.ports .ports-time { flex-wrap: wrap; }
+  .screen.ports .ports-select-vessel time { width: 64px; }
+  .screen.ports .ports-arrivals, .screen.ports .ports-board-card { padding: 14px; }
+  .screen.ports .ports-map.unavailable { height: 280px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen.ports .ports-map-callout > path { stroke-dashoffset: 0; }
+}

@@ -1,22 +1,69 @@
+/* Figma "K-JIT UI 개선 시안" variables. Light is the default; [data-theme="dark"] on <html> switches. */
 :root {
   color-scheme: light;
-  --page: #f4f6fa;
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --ink: #0f1b2d;
-  --ink-2: #5b6b80;
+  --page: #eef3f8;          /* bg/canvas */
+  --sidebar: #f8fafd;       /* bg/sidebar */
+  --surface: #ffffff;       /* bg/surface */
+  --surface-2: #f3f6fa;     /* bg/surface-2 */
+  --ink: #0f1b2d;           /* text/primary */
+  --ink-2: #5b6b80;         /* text/secondary */
   --ink-3: #94a0b1;
+  --on-band: #ffffff;       /* text/on-primary */
   --grid: #e6ebf1;
-  --line: #e2e7ee;
-  --band: #1f6feb;
-  --band-soft: #e8f0fe;
+  --line: #dde5ef;          /* border/default */
+  --band: #1f6feb;          /* brand/primary */
+  --band-hover: #185ccc;
+  --band-soft: #e5efff;     /* bg/primary-soft */
   --rta: #c2187b;
-  --wait: #e8892a;
+  --wait: #d9821a;          /* status/warn */
+  --wait-soft: #fdf1e2;
   --idle: #d03b3b;
-  --good: #16a06f;
-  --font: "Pretendard Variable", Pretendard, "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --r-panel: 14px;
+  --idle-soft: #fdeeee;
+  --good: #16a06f;          /* status/ok */
+  --good-soft: #e3f5ee;
+  --map-land: #eef1f4;
+  --map-water: #d7e6f3;
+  --chart-occupied: #9aa8b8;
+  --chart-remaining: #bfd6f5;
+  --overlay: rgba(15, 27, 45, 0.32);
+  --font: "Noto Sans KR", "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-card: 16px;
+  --r-panel: 12px;
   --r-btn: 10px;
-  --shadow-1: 0 1px 2px rgba(15, 27, 45, 0.04), 0 4px 16px rgba(15, 27, 45, 0.05);
-  --shadow-2: 0 2px 6px rgba(15, 27, 45, 0.06), 0 12px 32px rgba(15, 27, 45, 0.08);
+  --r-seg: 8px;
+  --shadow-1: 0 4px 16px rgba(15, 27, 45, 0.06);
+  --shadow-2: 0 2px 6px rgba(15, 27, 45, 0.06), 0 12px 32px rgba(15, 27, 45, 0.1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-w: 248px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #070e1a;
+  --sidebar: #0b1424;
+  --surface: #101b2d;
+  --surface-2: #15233a;
+  --ink: #e9eff8;
+  --ink-2: #93a3ba;
+  --ink-3: #64748b;
+  --on-band: #ffffff;
+  --grid: #1b2a40;
+  --line: #203049;
+  --band: #3d8bff;
+  --band-hover: #5a9cff;
+  --band-soft: #14294a;
+  --rta: #f0569f;
+  --wait: #f2a43b;
+  --wait-soft: #2d2213;
+  --idle: #f06a6a;
+  --idle-soft: #2e1619;
+  --good: #2fc08f;
+  --good-soft: #10291f;
+  --map-land: #212b3b;
+  --map-water: #0c1b30;
+  --chart-occupied: #55657c;
+  --chart-remaining: #24497a;
+  --overlay: rgba(2, 6, 14, 0.6);
+  --shadow-1: 0 4px 16px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.4);
 }

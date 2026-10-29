@@ -18,8 +18,8 @@ interface Props {
 }
 
 const H = 230
-const M = { l: 44, r: 16, t: 14, b: 30 }
-const BAND_H = 26
+const M = { l: 40, r: 12, t: 30, b: 30 }
+const BAND_H = 20
 
 export default function BerthFanChart({ tau, nominal, quantilesH, busy, a0, rta, maxDelayEnd, actualFree, showTable }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>()
@@ -76,14 +76,11 @@ export default function BerthFanChart({ tau, nominal, quantilesH, busy, a0, rta,
     return 1
   }
 
-  const mark = (h: number, cls: string, label: string, top = M.t) => (
-    <g className={`mark ${cls}`} transform={`translate(${x(h)},0)`}>
-      <line y1={top} y2={H - M.b + BAND_H + 8} />
-      <text y={top - 2} textAnchor={x(h) > width - 120 ? 'end' : 'start'} dx={x(h) > width - 120 ? -4 : 4}>
-        {label}
-      </text>
-    </g>
-  )
+  const mark = (h: number, cls: string, label: string, top = M.t) => {
+    const right = x(h) > width - 160
+    const labelWidth = label.length * 6.1 + 12
+    return <g className={`mark ${cls}`} transform={`translate(${x(h)},0)`}><line y1={top} y2={H - M.b + BAND_H + 4} />{label && <g transform={`translate(${right ? -labelWidth - 3 : 3},${top - 25})`}><rect width={labelWidth} height={21} rx={5} /><text x={6} y={14}>{label}</text></g>}</g>
+  }
 
   const iq = (k: number) => (busy ? Math.max(0, q[k]) : 0)
   const totalH = H + BAND_H + 18
@@ -127,7 +124,7 @@ export default function BerthFanChart({ tau, nominal, quantilesH, busy, a0, rta,
 
         {/* 누적분포 */}
         <path className="cdf-fill" d={fill} />
-        <path className="cdf" d={cdf} />
+        <path className="cdf" d={cdf} pathLength={1} />
 
         {/* 구간 띠 */}
         <g transform={`translate(0,${H - M.b + 6})`}>
@@ -135,10 +132,10 @@ export default function BerthFanChart({ tau, nominal, quantilesH, busy, a0, rta,
           <rect className="band-inner" x={x(iq(3))} width={Math.max(2, x(iq(15)) - x(iq(3)))} height={BAND_H - 8} rx={3} />
           <line className="band-mid" x1={x(iq(9))} x2={x(iq(9))} y1={-2} y2={BAND_H - 6} />
         </g>
+        <g className="median-pill" transform={`translate(${Math.min(width - 145, Math.max(M.l, x(iq(9)) - 12))},${H - M.b - 55})`}><rect width={132} height={22} rx={5} /><text x={6} y={15}>중앙 {fmtDT(t0 + iq(9) * 3600000)}</text></g>
 
         {mark(hOf(a0), 'm-a0', '', M.t)}
-        {mark(hOf(maxDelayEnd), 'm-max', '', M.t)}
-        {mark(rtaH, 'm-rta', `권고 도착 ${fmtDT(t0 + rtaH * 3600000)}`, M.t + 12)}
+        {mark(rtaH, 'm-rta', `권고 도착 ${fmtDT(t0 + rtaH * 3600000)}`, M.t)}
         {actualFree && mark(hOf(actualFree) * sweep, 'm-actual', `실제 선석 가용 ${fmtDT(actualFree)}`, M.t + 34)}
 
         {hover != null && (

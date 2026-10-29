@@ -21,3 +21,6 @@ web/dist-single/
 data/live/
 data/processed/replay/
 build/
+
+# Figma 시안 캡처 (작업용)
+.figma/
