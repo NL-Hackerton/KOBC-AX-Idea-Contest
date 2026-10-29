@@ -1,109 +1,69 @@
-/* Light = 재생, dark = 실시간. 8pt spacing, cards, and type follow the 시안. */
-:root,
-[data-theme="light"] {
+/* Figma "K-JIT UI 개선 시안" variables. Light is the default; [data-theme="dark"] on <html> switches. */
+:root {
   color-scheme: light;
-  --page: #f3f6fb;
-  --sidebar: #f7f9fc;
-  --surface: #ffffff;
-  --surface-2: #f4f7fb;
-  --surface-3: #e8eef6;
-  --ink: #121826;
-  --ink-2: #5c6b80;
-  --ink-3: #8b97a8;
-  --grid: #e6ebf2;
-  --line: #e4eaf2;
-  --primary: #2f6bff;
-  --primary-hover: #1f5bef;
-  --primary-soft: #e7f0ff;
-  --primary-ink: #ffffff;
-  --nav-on: #e7f0ff;
-  --band: #2f6bff;
-  --band-soft: #e7f0ff;
-  --rta: #2f6bff;
-  --eta: #f59e0b;
-  --wait: #f59e0b;
-  --idle: #e11d48;
-  --good: #12a36a;
-  --good-soft: #e7f7ef;
-  --hist: #e45b9a;
-  --danger-soft: #fdecec;
-  --warn-soft: #fff6e5;
-  --warn-line: #f3ddaa;
-  --map-water: #e4eef8;
-  --map-land: #f8fafc;
-  --map-land-edge: #d5e0ec;
-  --map-grid: #c9d5e4;
-  --bar-past: #c5ced8;
-  --bar-pred: #9ec4fb;
-  --bar-mid: #2f6bff;
-  --ship-berthed: #1c2430;
-  --ship-other: #ffffff;
-  --grade-a: #d9e7fb;
-  --grade-b: #e7eef8;
-  --grade-c: #f3f1ee;
-  --grade-d: #f8e4e1;
-  --grade-e: #f3c9c6;
-  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
-  --shadow-2: 0 2px 6px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.08);
-  --overlay: rgba(243, 246, 251, 0.86);
-  --skel: #e6edf5;
-  --font: "Pretendard Variable", Pretendard, "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --r-panel: 16px;
+  --page: #eef3f8;          /* bg/canvas */
+  --sidebar: #f8fafd;       /* bg/sidebar */
+  --surface: #ffffff;       /* bg/surface */
+  --surface-2: #f3f6fa;     /* bg/surface-2 */
+  --ink: #0f1b2d;           /* text/primary */
+  --ink-2: #5b6b80;         /* text/secondary */
+  --ink-3: #94a0b1;
+  --on-band: #ffffff;       /* text/on-primary */
+  --grid: #e6ebf1;
+  --line: #dde5ef;          /* border/default */
+  --band: #1f6feb;          /* brand/primary */
+  --band-hover: #185ccc;
+  --band-soft: #e5efff;     /* bg/primary-soft */
+  --rta: #c2187b;
+  --wait: #d9821a;          /* status/warn */
+  --wait-soft: #fdf1e2;
+  --idle: #d03b3b;
+  --idle-soft: #fdeeee;
+  --good: #16a06f;          /* status/ok */
+  --good-soft: #e3f5ee;
+  --map-land: #eef1f4;
+  --map-water: #d7e6f3;
+  --chart-occupied: #9aa8b8;
+  --chart-remaining: #bfd6f5;
+  --overlay: rgba(15, 27, 45, 0.32);
+  --font: "Noto Sans KR", "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-card: 16px;
+  --r-panel: 12px;
   --r-btn: 10px;
-  --r-pill: 999px;
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
-  --side: 232px;
-  --top: 64px;
+  --r-seg: 8px;
+  --shadow-1: 0 4px 16px rgba(15, 27, 45, 0.06);
+  --shadow-2: 0 2px 6px rgba(15, 27, 45, 0.06), 0 12px 32px rgba(15, 27, 45, 0.1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-w: 248px;
 }
 
-[data-theme="dark"] {
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #0b1220;
-  --sidebar: #0c1424;
-  --surface: #141c2e;
-  --surface-2: #1b263b;
-  --surface-3: #24344c;
-  --ink: #e8eef8;
-  --ink-2: #9aa8bd;
-  --ink-3: #6d7c93;
-  --grid: #243044;
-  --line: #2a3a52;
-  --primary: #3b82f6;
-  --primary-hover: #5b97f8;
-  --primary-soft: #1a3058;
-  --primary-ink: #ffffff;
-  --nav-on: #1a3058;
-  --band: #3b82f6;
-  --band-soft: #1a3058;
-  --rta: #60a5fa;
-  --eta: #fbbf24;
-  --wait: #fbbf24;
-  --idle: #fb7185;
-  --good: #34d399;
-  --good-soft: #12352c;
-  --hist: #f472b6;
-  --danger-soft: #3a1d24;
-  --warn-soft: #3a2e16;
-  --warn-line: #6b5420;
-  --map-water: #0e1a2e;
-  --map-land: #16263c;
-  --map-land-edge: #2a4060;
-  --map-grid: #1c314c;
-  --bar-past: #5c6b80;
-  --bar-pred: #3d6cb5;
-  --bar-mid: #60a5fa;
-  --ship-berthed: #f8fafc;
-  --ship-other: #8ea0b8;
-  --grade-a: #1e3a5f;
-  --grade-b: #24344c;
-  --grade-c: #2c3344;
-  --grade-d: #4a2c32;
-  --grade-e: #5c3038;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
-  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.35);
-  --overlay: rgba(11, 18, 32, 0.86);
-  --skel: #24344c;
+  --page: #070e1a;
+  --sidebar: #0b1424;
+  --surface: #101b2d;
+  --surface-2: #15233a;
+  --ink: #e9eff8;
+  --ink-2: #93a3ba;
+  --ink-3: #64748b;
+  --on-band: #ffffff;
+  --grid: #1b2a40;
+  --line: #203049;
+  --band: #3d8bff;
+  --band-hover: #5a9cff;
+  --band-soft: #14294a;
+  --rta: #f0569f;
+  --wait: #f2a43b;
+  --wait-soft: #2d2213;
+  --idle: #f06a6a;
+  --idle-soft: #2e1619;
+  --good: #2fc08f;
+  --good-soft: #10291f;
+  --map-land: #212b3b;
+  --map-water: #0c1b30;
+  --chart-occupied: #55657c;
+  --chart-remaining: #24497a;
+  --overlay: rgba(2, 6, 14, 0.6);
+  --shadow-1: 0 4px 16px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.4);
 }

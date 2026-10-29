@@ -1,0 +1,120 @@
+.screen.agent { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.screen.agent .page-head { margin: 0; }
+.screen.agent .agent-toolbar { display: flex; gap: 24px; align-items: flex-end; justify-content: space-between; }
+.screen.agent .agent-tabs { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.screen.agent .agent-tabs > p { margin: 0; }
+.screen.agent .agent-status { position: relative; flex: 0 1 460px; max-width: 460px; padding: 10px 12px 10px 28px; margin: 0; background: var(--surface-2); border-radius: 10px; text-align: left; line-height: 18px; }
+.screen.agent .agent-status::before { content: ''; position: absolute; top: 16px; left: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
+.screen.agent .agent-status.live::before { background: var(--good); }
+.screen.agent .agent-tab-body { min-width: 0; animation: agent-body-in 200ms var(--ease-out) both; }
+.screen.agent .agent-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.screen.agent .panel { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); display: flex; flex-direction: column; gap: 16px; }
+.screen.agent .panel > p, .screen.agent .panel h3, .screen.agent .panel h4 { margin: 0; }
+.screen.agent .card-head { margin-bottom: 0; }
+.screen.agent .panel h3 { font-size: 16px; line-height: 24px; }
+.screen.agent .stack { display: flex; flex-direction: column; gap: 6px; margin: 0; min-width: 0; }
+.screen.agent .stack select { padding: 10px 36px 10px 12px; width: 100%; min-width: 0; font-size: 14px; line-height: 22px; color: var(--ink); }
+.screen.agent .doc { display: flex; flex-direction: column; gap: 10px; max-height: none; overflow: auto; border: 0; border-radius: 12px; padding: 16px; background: var(--surface-2); font: 12px/18px var(--font); white-space: pre-wrap; overflow-wrap: anywhere; }
+.screen.agent .doc > span:empty { display: none; }
+.screen.agent .doc > span { white-space: pre-wrap; }
+.screen.agent .doc mark { display: block; background: var(--band-soft); color: var(--ink); padding: 6px 8px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: border-color 180ms, box-shadow 180ms; }
+.screen.agent .doc mark.on { border-color: var(--band); background: var(--band-soft); animation: agent-clause-glow 600ms ease-out; }
+.screen.agent .doc-input { width: 100%; padding: 16px; border: 1px solid var(--line); border-radius: 10px; font: 13px/1.6 var(--font); resize: vertical; background: var(--surface); color: var(--ink); }
+.screen.agent .note-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.screen.agent .gen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; font-size: 12px; line-height: 18px; }
+.screen.agent .gen-tag { display: inline-flex; padding: 2px 8px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; font-weight: 500; color: var(--ink); }
+.screen.agent .gen-llm .gen-tag { color: var(--band); background: var(--band-soft); }
+.screen.agent .gen-warn { color: var(--wait); }
+.screen.agent .assess { position: relative; padding: 12px 14px 12px 32px; background: var(--surface-2); border-radius: 12px; font-size: 14px; font-weight: 500; line-height: 22px; }
+.screen.agent .assess::before { content: ''; position: absolute; top: 20px; left: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--band); }
+.screen.agent .clause-list { display: grid; gap: 10px; list-style: none; padding: 0; margin: 0; }
+.screen.agent .clause-list li { border: 1px solid var(--line); padding: 12px 14px; border-radius: 12px; transition: background 180ms, border-color 180ms; }
+.screen.agent .clause-list li:hover { border-color: var(--band); }
+.screen.agent .clause-list li.on { border: 1px solid var(--band); background: var(--band-soft); }
+.screen.agent .clause-head { display: flex; width: 100%; align-items: center; flex-wrap: wrap; gap: 8px; padding: 0; border: 0; background: none; color: var(--ink); text-align: left; min-height: 28px; }
+.screen.agent .clause-number { width: 14px; flex: none; font-size: 12px; color: var(--ink-2); }
+.screen.agent .clause-head .chip { padding: 3px 8px; border-radius: 999px; color: var(--band); background: var(--band-soft); font-size: 12px; font-weight: 500; }
+.screen.agent .clause-head .clip { max-width: 100%; }
+.screen.agent .clause-list li p { margin: 8px 0 0; font-size: 14px; line-height: 22px; }
+.screen.agent .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.screen.agent .form-row .grow { flex: 1; min-width: 180px; }
+.screen.agent .lineup-group { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.screen.agent .lineup-group .panel-head { margin: 0; }
+.screen.agent .lineup-group h4 { font-size: 13px; line-height: 20px; color: var(--ink-2); font-weight: 500; }
+.screen.agent .agent-table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-color: var(--line) transparent; }
+.screen.agent .lineup-group table { width: 100%; table-layout: fixed; font-size: 12px; line-height: 18px; min-width: 516px; }
+.screen.agent .lineup-group th, .screen.agent .lineup-group td { text-align: left; padding: 9px 8px; white-space: nowrap; }
+.screen.agent .lineup-group th:nth-child(1) { width: 40px; }
+.screen.agent .lineup-group th:nth-child(2) { width: 124px; }
+.screen.agent .lineup-group th:nth-child(3) { width: 80px; }
+.screen.agent .lineup-group th:nth-child(4) { width: 106px; }
+.screen.agent .lineup-vessel { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.screen.agent .lineup-group td.source-quote { color: var(--ink-2); white-space: normal; overflow-wrap: anywhere; }
+.screen.agent .missing-value { color: var(--wait); }
+.screen.agent .notice { margin: 0; }
+.screen.agent .form-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 12px; }
+.screen.agent .form-grid > label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 18px; color: var(--ink-2); grid-column: span 3; min-width: 0; }
+.screen.agent .form-grid > label:nth-child(3), .screen.agent .form-grid > label:nth-child(4), .screen.agent .form-grid > label:nth-child(5) { grid-column: span 2; }
+.screen.agent .form-grid input:not([type=checkbox]), .screen.agent .form-grid select { width: 100%; min-width: 0; font-size: 14px; color: var(--ink); padding: 10px 12px; }
+.screen.agent .form-grid .check { align-self: end; min-height: 44px; display: flex; flex-direction: row; align-items: center; color: var(--ink); font-size: 13px; }
+.screen.agent input[type=checkbox] { width: 18px; height: 18px; flex: none; margin: 0; accent-color: var(--band); }
+.screen.agent .settle { min-width: 380px; font-size: 14px; }
+.screen.agent .settle td, .screen.agent .settle th { padding: 10px 8px; text-align: right; }
+.screen.agent .settle th:first-child, .screen.agent .settle td:first-child { text-align: left; }
+.screen.agent .settle thead th { background: transparent; font-size: 12px; }
+.screen.agent .settle tr.total td { background: var(--band-soft); border-top: 1px solid var(--line); font-weight: 500; }
+.screen.agent .settle + .assess, .screen.agent .agent-table-scroll + .assess { background: var(--band-soft); }
+.screen.agent .agent-table-scroll + .assess::before { background: var(--good); }
+.screen.agent .settle-limit { display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; background: var(--surface-2); border-radius: 12px; }
+.screen.agent .settle-limit-value { display: flex; align-items: center; gap: 20px; }
+.screen.agent .settle-limit-value strong { min-width: 50px; font-size: 16px; }
+.screen.agent .settle-meter { flex: 1; height: 8px; border-radius: 4px; background: var(--line); position: relative; }
+.screen.agent .settle-meter span { display: block; height: 100%; background: var(--good); border-radius: inherit; }
+.screen.agent .settle-meter i { position: absolute; top: -4px; width: 2px; height: 16px; background: var(--ink); transition: left 240ms var(--ease-out); }
+.screen.agent .agent-draft { display: flex; flex-direction: column; gap: 20px; }
+.screen.agent .note { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.screen.agent .draft-document { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.6 var(--font); background: var(--surface); border: 1px solid var(--line); padding: 16px; border-radius: 8px; margin: 0; }
+.screen.agent .draft-loading { min-height: 280px; width: 100%; }
+.screen.agent .send-checks { display: flex; flex-direction: column; gap: 4px; border: 0; background: transparent; border-radius: 0; padding: 0; margin: 0; min-width: 0; }
+.screen.agent .send-checks legend { padding: 0; margin-bottom: 6px; }
+.screen.agent .send-checks label { display: flex; align-items: center; gap: 8px; min-height: 30px; color: var(--ink); cursor: pointer; }
+.screen.agent .send-checks input { accent-color: var(--good); transition: transform 150ms var(--ease-out); }
+.screen.agent .send-checks input:checked { animation: agent-check-in 180ms var(--ease-out); }
+.screen.agent .send-button { transition: background 180ms, opacity 180ms, box-shadow 180ms; }
+.screen.agent .send-button.ready { box-shadow: var(--shadow-1); }
+.screen.agent .lang-switch { display: flex; gap: 12px; margin: 0; }
+.screen.agent .lang-switch button { min-height: 30px; color: var(--ink-2); }
+.screen.agent .lang-switch button.on { color: var(--band); }
+.screen.agent .agent-history table { min-width: 740px; text-align: left; }
+.screen.agent .agent-history th, .screen.agent .agent-history td { text-align: left; }
+.screen.agent .chat { max-width: none; gap: 20px; }
+.screen.agent .chat-empty { display: flex; flex-direction: column; gap: 16px; }
+.screen.agent .chat-empty p { margin: 0; }
+.screen.agent .chat-empty .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.screen.agent .chat-empty .chips .btn { white-space: normal; text-align: left; }
+.screen.agent .chat-log { display: grid; gap: 12px; max-height: 560px; overflow: auto; }
+.screen.agent .turn { padding: 14px 16px; border-radius: 12px; max-width: 92%; background: var(--surface-2); }
+.screen.agent .turn.user { justify-self: end; background: var(--band); color: var(--on-band); }
+.screen.agent .turn.err { background: var(--wait-soft); color: var(--ink); }
+.screen.agent .chat-input { display: flex; gap: 12px; align-items: flex-end; }
+.screen.agent .chat-input textarea { flex: 1; min-width: 0; font: 14px/1.6 var(--font); padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.screen.agent .tools code { overflow-wrap: anywhere; }
+@keyframes agent-body-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes agent-clause-glow { from { box-shadow: 0 0 0 3px var(--band-soft); } to { box-shadow: 0 0 0 0 var(--band-soft); } }
+@keyframes agent-check-in { 50% { transform: scale(1.14); } }
+@media (max-width: 1240px) { .screen.agent .agent-toolbar { flex-wrap: wrap; gap: 12px; } .screen.agent .agent-status { flex: 1 1 100%; max-width: none; } }
+@media (max-width: 1100px) { .screen.agent .agent-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) {
+  .screen.agent .panel { padding: 16px; }
+  .screen.agent .agent-tabs { width: 100%; }
+  .screen.agent .agent-tabs .seg-wrap { max-width: 100%; min-width: 0; }
+  .screen.agent .agent-tabs .seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .screen.agent .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .screen.agent .form-grid > label, .screen.agent .form-grid > label:nth-child(3), .screen.agent .form-grid > label:nth-child(4), .screen.agent .form-grid > label:nth-child(5) { grid-column: span 1; }
+  .screen.agent .form-grid .check { grid-column: 1 / -1; }
+  .screen.agent .chat-input { align-items: stretch; flex-direction: column; }
+  .screen.agent .doc { padding: 12px; }
+  .screen.agent .clause-head .clip { flex-basis: 100%; margin-left: 22px; }
+  .screen.agent .send-checks label { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .screen.agent .settle-meter i, .screen.agent .send-button, .screen.agent .doc mark, .screen.agent .clause-list li { transition: none; } }

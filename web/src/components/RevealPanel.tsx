@@ -1,19 +1,20 @@
 import type { Policy } from '../types'
 import { fmtDT } from '../lib/time'
+import Icon from './Icon'
+import eyeIcon from '../assets/icons/decision-eye.svg'
 
 export default function RevealPanel({ revealed, onReveal, actualFree, actualWaitH, policy, busy }: { revealed: boolean; onReveal: () => void; actualFree: string; actualWaitH: number; policy: Policy; busy: boolean }) {
   if (!revealed)
     return (
-      <section className="panel reveal">
-        <button className="btn primary" onClick={onReveal}>
-          실제 결과 보기
-        </button>
-        <span className="small muted">이 항차가 실제로 언제 선석에 들어갈 수 있었는지 공개합니다.</span>
+      <section className="card reveal">
+        <h3>실제 결과 보기</h3>
+        <p className="small muted">이 항차가 실제로 언제 선석에 들어갈 수 있었는지 공개합니다.</p>
+        <button className="btn block" onClick={onReveal}><Icon src={eyeIcon} />실제 결과 열기</button>
       </section>
     )
   const idle = policy.extraIdleH ?? 0
   return (
-    <section className="panel reveal open" aria-live="polite">
+    <section className="card reveal open" aria-live="polite">
       <div className="reveal-grid num">
         <div>
           <p className="small muted">실제 선석 가용</p>

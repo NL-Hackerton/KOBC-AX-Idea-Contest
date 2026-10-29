@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { agentExamples, hasServer, postAgent, read } from '../api'
 import AgentNote from '../components/AgentNote'
 import GenBadge from '../components/GenBadge'
-import PageHeader from '../components/PageHeader'
 import Segmented from '../components/Segmented'
 import { fmtDT } from '../lib/time'
 import type { Action, AgentTab, AppState } from '../state'
 import type { AgentMeta, ChatResult, ContractResult, LineupResult, LineupShip, ToolCall } from '../types'
+import { CardHead, PageHeader } from '../components/ui'
+import { stagger, useTween } from '../lib/motion'
+import '../styles/agent.css'
 
 const TABS: { value: AgentTab; label: string; hint: string }[] = [
   { value: 'contract', label: '조항 추출', hint: '용선계약에서 JIT 도착, 신속 항해 의무, 가상 도착, 체선료 조항을 찾는다' },
@@ -28,13 +30,21 @@ export default function Agent({ state, dispatch }: { state: AppState; dispatch: 
   useEffect(() => {
     read<Status | null>('/api/agent/status', () => null).then(setSt)
   }, [])
-  const tab = TABS.find((t) => t.value === state.agentTab)
+  const descriptions: Record<AgentTab, string> = {
+    contract: '계약서와 대리점 메일에서 감속 결정에 필요한 값을 찾고, 그 값으로 선주·용선자 정산과 지시문을 만듭니다.',
+    lineup: '계약서와 대리점 메일에서 감속 결정에 필요한 값을 찾고, 정산과 지시문·요청서 초안을 만듭니다. 보내기는 사람이 확인한 뒤에 합니다.',
+    settle: '감속으로 아낀 연료비와 체선료 변화를 선주·용선자별로 나눕니다. 값은 항차 결정 화면의 현재 권고에서 가져옵니다.',
+    draft: '계약서와 대리점 메일에서 감속 결정에 필요한 값을 찾고, 정산과 지시문·요청서 초안을 만듭니다. 보내기는 사람이 확인한 뒤에 합니다.',
+    chat: '항만 상태와 도착 권고를 질문하면 엔진 도구의 계산 결과를 근거로 답합니다.',
+  }
   return (
     <div className="screen agent">
-      <PageHeader title="계약·정산·에이전트" lede={tab?.hint} />
-      <div className="toolbar">
-        <Segmented variant="accent" label="기능" value={state.agentTab} options={TABS} onChange={(t) => dispatch({ type: 'agentTab', tab: t })} />
-        <p className="small muted agent-status">
+      <PageHeader title="계약·정산·에이전트" sub={descriptions[state.agentTab]} bodySub />
+      <div className="agent-toolbar">
+        <div className="agent-tabs">
+          <Segmented label="기능" variant="primary" value={state.agentTab} options={TABS} onChange={(t) => dispatch({ type: 'agentTab', tab: t })} />
+        </div>
+        <p className={`small muted agent-status${st?.live ? ' live' : ''}`}>
           {!st
             ? '배포본: 예시 계약·메일의 분석 결과와 정산 계산기를 쓸 수 있습니다. 직접 붙여 넣은 문서 분석과 질의응답은 서버를 실행하면 동작합니다.'
             : st.live
@@ -42,11 +52,13 @@ export default function Agent({ state, dispatch }: { state: AppState; dispatch: 
               : 'LLM 꺼짐. 같은 화면이 규칙·템플릿과 엔진 도구로 동작합니다.'}
         </p>
       </div>
+      <div key={state.agentTab} className="agent-tab-body">
       {state.agentTab === 'contract' && <ContractTab />}
       {state.agentTab === 'lineup' && <LineupTab dispatch={dispatch} />}
       {state.agentTab === 'settle' && <SettleTab state={state} />}
       {state.agentTab === 'draft' && <DraftTab state={state} dispatch={dispatch} />}
       {state.agentTab === 'chat' && <ChatTab />}
+      </div>
     </div>
   )
 }
@@ -69,16 +81,20 @@ function ContractTab() {
   const ex = agentExamples()
   const [pick, setPick] = useState(ex?.contracts[0]?.id ?? '')
   const [text, setText] = useState(ex?.contracts[0]?.text ?? '')
-  const [res, setRes] = useState<Res<ContractResult>>(null)
+  const [res, setRes] = useState<Res<ContractResult>>(() => ex?.contracts[0]?.result ? { data: ex.contracts[0].result, offline: true } : null)
   const [busy, setBusy] = useState(false)
-  const [focus, setFocus] = useState<number | null>(null)
+  const [focus, setFocus] = useState<number | null>(() => {
+    const index = ex?.contracts[0]?.result.clauses.findIndex((c) => /JIT|가상/.test(c.label))
+    return index != null && index >= 0 ? index : null
+  })
   const marks = useRef<(HTMLElement | null)[]>([])
 
   function choose(id: string) {
     setPick(id)
     const c = ex?.contracts.find((x) => x.id === id)
     setText(c?.text ?? '')
-    setRes(null)
+    setRes(c?.result ? { data: c.result, offline: true } : null)
+    setFocus(null)
   }
   async function run() {
     setBusy(true)
@@ -104,7 +120,7 @@ function ContractTab() {
   return (
     <div className="agent-grid">
       <section className="panel">
-        <h3>용선계약 본문</h3>
+        <CardHead title="용선계약 본문" />
         <label className="small muted stack">
           예시 계약 (합성 문안)
           <select value={pick} onChange={(e) => choose(e.target.value)}>
@@ -120,10 +136,10 @@ function ContractTab() {
           <div className="doc" aria-label="조항을 표시한 본문">
             {pieces.map((p, k) =>
               p.i == null ? (
-                <span key={k}>{p.t}</span>
+                p.t.trim() ? <span key={k}>{p.t.trim()}</span> : null
               ) : (
-                <mark key={k} ref={(el) => void (marks.current[p.i!] = el)} className={focus === p.i ? 'on' : ''}>
-                  {p.t}
+                <mark key={k} ref={(el) => void (marks.current[p.i!] = el)} className={focus === p.i ? 'on' : ''} tabIndex={0} role="button" aria-label={`${ok?.data.clauses[p.i].label} 조항 선택`} onClick={() => setFocus(p.i)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFocus(p.i) } }}>
+                  {p.t.trim()}
                 </mark>
               ),
             )}
@@ -144,7 +160,7 @@ function ContractTab() {
         </div>
       </section>
       <section className="panel">
-        <h3>찾은 조항</h3>
+        <CardHead title="찾은 조항" right={ok ? <span className="small muted">{ok.data.clauses.length}개</span> : undefined} />
         {!res && <p className="muted">본문을 넣고 조항 찾기를 누르면 감속 결정과 관련된 조항을 근거 구간과 함께 보여줍니다.</p>}
         {res && 'error' in res && <p className="notice small">{res.error}</p>}
         {ok && (
@@ -155,21 +171,18 @@ function ContractTab() {
             <ol className="clause-list">
               {ok.data.clauses.map((c, i) => (
                 <li key={i} className={focus === i ? 'on' : ''}>
-                  <span className="clause-no">{i + 1}</span>
-                  <div>
-                    <button
-                      type="button"
-                      className="clause-head"
-                      onClick={() => {
-                        setFocus(i)
-                        marks.current[i]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-                      }}
-                    >
-                      <span className="chip">{c.label}</span>
-                      <span className="small muted clip">{c.quote.split('\n')[0]}</span>
-                    </button>
-                    <p className="small">{c.note}</p>
-                  </div>
+                  <button
+                    className="clause-head"
+                    onClick={() => {
+                      setFocus(i)
+                      marks.current[i]?.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+                    }}
+                  >
+                    <span className="clause-number">{i + 1}</span>
+                    <span className="chip">{c.label}</span>
+                    <span className="small muted clip">{c.quote.split('\n')[0]}</span>
+                  </button>
+                  <p>{c.note}</p>
                 </li>
               ))}
             </ol>
@@ -189,7 +202,7 @@ function LineupTab({ dispatch }: { dispatch: (a: Action) => void }) {
   const [pick, setPick] = useState(ex?.mails[0]?.id ?? '')
   const [text, setText] = useState(ex?.mails[0]?.text ?? '')
   const [port, setPort] = useState<string>(ex?.mails[0]?.port ?? '')
-  const [res, setRes] = useState<Res<LineupResult>>(null)
+  const [res, setRes] = useState<Res<LineupResult>>(() => ex?.mails[0]?.result ? { data: ex.mails[0].result, offline: true } : null)
   const [busy, setBusy] = useState(false)
 
   function choose(id: string) {
@@ -197,7 +210,7 @@ function LineupTab({ dispatch }: { dispatch: (a: Action) => void }) {
     const m = ex?.mails.find((x) => x.id === id)
     setText(m?.text ?? '')
     setPort(m?.port ?? '')
-    setRes(null)
+    setRes(m?.result ? { data: m.result, offline: true } : null)
   }
   async function run() {
     setBusy(true)
@@ -218,7 +231,7 @@ function LineupTab({ dispatch }: { dispatch: (a: Action) => void }) {
   return (
     <div className="agent-grid">
       <section className="panel">
-        <h3>대리점 메일</h3>
+        <CardHead title="대리점 메일 붙여 넣기" sub="받은 메일 본문을 그대로 붙여 넣습니다. 개인 연락처는 저장하지 않습니다." />
         <div className="form-row">
           <label className="small muted stack grow">
             예시 메일 (합성 문안)
@@ -241,16 +254,17 @@ function LineupTab({ dispatch }: { dispatch: (a: Action) => void }) {
             </select>
           </label>
         </div>
-        <textarea className="doc-input" rows={18} value={text} onChange={(e) => (setText(e.target.value), setPick(''))} placeholder="대기 순번(line-up) 메일 본문을 붙여 넣으세요" />
+        <textarea className="doc-input" aria-label="대리점 메일 본문" rows={11} value={text} onChange={(e) => (setText(e.target.value), setPick(''), setRes(null))} placeholder="대기 순번(line-up) 메일 본문을 붙여 넣으세요" />
         <div className="note-actions">
+          <button className="btn" onClick={() => choose(ex?.mails[0]?.id ?? '')}>예시 메일 불러오기</button>
           <button className="btn primary" disabled={busy || !text.trim()} onClick={run}>
-            {busy ? '정리하는 중' : '순번 정리'}
+            {busy ? '정리하는 중' : '구조화하기'}
           </button>
         </div>
       </section>
       <section className="panel">
-        <h3>구조화한 대기 순번</h3>
-        {!res && <p className="muted">메일을 넣고 순번 정리를 누르면 선석별로 선박·상태·시각을 표로 만듭니다. 예측 대상 선석이면 항차 결정의 대기 순번 조건에 바로 넣을 수 있습니다.</p>}
+        <CardHead title="구조화 결과" sub="표의 값마다 원문 문장을 연결합니다. 원문에 없는 값은 비워 두고 표시합니다." />
+        {!res && <p className="muted">메일을 넣고 구조화하기를 누르면 선석별로 선박·상태·시각을 표로 만듭니다. 예측 대상 선석이면 항차 결정의 대기 순번 조건에 바로 넣을 수 있습니다.</p>}
         {res && 'error' in res && <p className="notice small">{res.error}</p>}
         {ok && (
           <>
@@ -266,36 +280,37 @@ function LineupTab({ dispatch }: { dispatch: (a: Action) => void }) {
                       {ok.data.port ? `${ok.data.port} ` : ''}
                       {berth}
                     </h4>
-                    {key && ok.data.port ? (
-                      <button className="btn small-btn" disabled={n === 0} onClick={() => dispatch({ type: 'handoff', value: { port: ok.data.port!, berth, ships } })}>
-                        항차 결정에 넣기
-                      </button>
-                    ) : (
-                      <span className="small muted">예측 대상 선석이 아님</span>
-                    )}
+                    {!key && <span className="small muted">예측 대상 선석이 아님</span>}
                   </div>
+                  <div className="agent-table-scroll">
                   <table className="data-table small num">
                     <thead>
                       <tr>
                         <th>순번</th>
                         <th>선박</th>
                         <th>상태</th>
-                        <th>시각</th>
-                        <th>화물</th>
+                        <th>예정 시각</th>
+                        <th>원문</th>
                       </tr>
                     </thead>
                     <tbody>
                       {ships.map((s, i) => (
-                        <tr key={`${s.vessel}-${i}`}>
+                        <tr key={`${s.vessel}-${i}`} className="enter" style={stagger(i)}>
                           <td>{s.order}</td>
-                          <td className="left">{s.vessel}</td>
+                          <td className="left"><span className="lineup-vessel" title={s.vessel}>{s.vessel}</span></td>
                           <td className="left">{STATUS_KO[s.status]}</td>
-                          <td>{s.time ? fmtDT(s.time) : '-'}</td>
-                          <td className="left">{s.cargo ?? '-'}</td>
+                          <td className={!s.time ? 'missing-value' : ''}>{s.time ? `${s.status === 'berthed' ? '출항' : '도착'} ${fmtDT(s.time)}` : '원문에 없음'}</td>
+                          <td className="left source-quote">{s.line ? `“${s.line}”` : '원문에 없음'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  </div>
+                  {ships.some((s) => !s.time) && <p className="notice warn small">{ships.filter((s) => !s.time).map((s) => s.vessel).join(', ')}의 예정 시각이 메일에 없습니다. 항차 결정에 반영하기 전에 원문과 공개 입항 신고 값을 확인해 주세요.</p>}
+                  <div className="note-actions">
+                    <button className="btn" onClick={() => { setRes(null); document.querySelector<HTMLTextAreaElement>('.screen.agent .doc-input')?.focus() }}>수정</button>
+                    {key && ok.data.port && <button className="btn primary" disabled={n === 0} onClick={() => dispatch({ type: 'handoff', value: { port: ok.data.port!, berth, ships } })}>항차 결정에 반영</button>}
+                  </div>
                 </div>
               )
             })}
@@ -318,11 +333,11 @@ function SettleTab({ state }: { state: AppState }) {
   const charterer = (f.payer === 'charterer' ? fuelUsd : 0) + demShift
   const breakEven = f.onDem && f.delayH > 0 && f.rate > 0 ? (fuelUsd * 24) / (f.rate * f.delayH) : null
   const usd = (v: number) => `${v < 0 ? '−' : v > 0 ? '+' : ''}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`
-  const moneyClass = (v: number) => (Math.round(v) > 0 ? 'money-pos' : Math.round(v) < 0 ? 'money-neg' : '')
+  const [fuelDisplay, demDisplay, ownerDisplay, chartererDisplay, limitDisplay] = useTween([fuelUsd, demShift, owner, charterer, Math.min(100, (breakEven ?? 0) * 100)])
   return (
     <div className="agent-grid">
       <section className="panel">
-        <h3>입력</h3>
+        <CardHead title="입력" />
         {cur && (
           <p className="small muted">
             늦춤·절감 연료 기본값은 항차 결정 화면의 현재 권고({cur.vessel || '직접 입력 선박'}, {cur.berth}, 위험 수준 {cur.risk})에서 가져왔습니다.
@@ -365,7 +380,8 @@ function SettleTab({ state }: { state: AppState }) {
         </p>
       </section>
       <section className="panel">
-        <h3>선주·용선자별 변화 (항차 1회)</h3>
+        <CardHead title="선주·용선자별 변화 (항차 1회)" />
+        <div className="agent-table-scroll">
         <table className="data-table num settle">
           <thead>
             <tr>
@@ -378,24 +394,25 @@ function SettleTab({ state }: { state: AppState }) {
           <tbody>
             <tr>
               <td>연료비 절감</td>
-              <td className={moneyClass(f.payer === 'owner' ? fuelUsd : 0)}>{usd(f.payer === 'owner' ? fuelUsd : 0)}</td>
-              <td className={moneyClass(f.payer === 'charterer' ? fuelUsd : 0)}>{usd(f.payer === 'charterer' ? fuelUsd : 0)}</td>
-              <td className={moneyClass(fuelUsd)}>{usd(fuelUsd)}</td>
+              <td>{usd(f.payer === 'owner' ? fuelDisplay : 0)}</td>
+              <td>{usd(f.payer === 'charterer' ? fuelDisplay : 0)}</td>
+              <td>{usd(fuelDisplay)}</td>
             </tr>
             <tr>
               <td>체선료</td>
-              <td className={moneyClass(-demShift)}>{usd(-demShift)}</td>
-              <td className={moneyClass(demShift)}>{usd(demShift)}</td>
-              <td className={moneyClass(0)}>{usd(0)}</td>
+              <td>{usd(-demDisplay)}</td>
+              <td>{usd(demDisplay)}</td>
+              <td>{usd(0)}</td>
             </tr>
             <tr className="total">
               <td>합계</td>
-              <td className={moneyClass(owner)}>{usd(owner)}</td>
-              <td className={moneyClass(charterer)}>{usd(charterer)}</td>
-              <td className={moneyClass(fuelUsd)}>{usd(fuelUsd)}</td>
+              <td>{usd(ownerDisplay)}</td>
+              <td>{usd(chartererDisplay)}</td>
+              <td>{usd(fuelDisplay)}</td>
             </tr>
           </tbody>
         </table>
+        </div>
         <p className="assess">
           {f.payer === 'owner'
             ? owner >= 0
@@ -404,15 +421,18 @@ function SettleTab({ state }: { state: AppState }) {
             : `연료비를 내는 용선자가 ${usd(charterer)} 이득입니다. 선주는 체선료 감액만큼 ${usd(owner)} 변합니다.`}
         </p>
         {breakEven != null && f.payer === 'owner' && (
-          <div className="even-bar">
-            <p className="small">선주가 손해 보지 않는 최대 감액</p>
-            <div className="even-track" aria-hidden>
-              <span style={{ width: `${Math.min(100, Math.max(0, breakEven * 100))}%` }} />
+          <div className="settle-limit">
+            <span className="small muted">선주가 손해 보지 않는 최대 감액</span>
+            <div className="settle-limit-value">
+              <div className="settle-meter" role="meter" aria-label="선주가 손해 보지 않는 최대 감액" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, breakEven * 100)}>
+                <span style={{ width: `${limitDisplay}%` }} />
+                <i style={{ left: `${Math.min(100, f.cut)}%` }} title={`현재 감액 ${f.cut}%`} />
+              </div>
+              <strong className="num">{limitDisplay.toFixed(0)}%</strong>
             </div>
-            <strong className="num">{Math.min(100, breakEven * 100).toFixed(0)}%</strong>
-            <p className="small muted">체선료는 둘 사이를 옮겨 갈 뿐이라 합계는 연료비 절감과 같습니다.</p>
           </div>
         )}
+        <p className="small muted">체선료는 둘 사이를 옮겨 갈 뿐이라 합계는 연료비 절감과 같습니다.</p>
       </section>
     </div>
   )
@@ -434,24 +454,25 @@ function DraftTab({ state, dispatch }: { state: AppState; dispatch: (a: Action) 
   const s = cur.summary
   const p = s.policy
   return (
-    <section className="panel draft-panel">
-      <h3>현재 권고</h3>
-      <p className="num">
-        {s.vessel || '직접 입력 선박'}, {s.port} {s.berth}. {p.delayH < 0.05 ? `원래 일정 ${fmtDT(s.a0)} 유지` : `권고 도착 ${fmtDT(p.rta)} (${p.delayH.toFixed(1)}시간 늦춤, ${p.speedKn.toFixed(1)}노트)`}, 위험 수준 {s.risk}
-      </p>
-      {p.delayH < 0.05 && <p className="small muted">늦춤이 없는 권고라 지시문·요청서 대신 설명만 만듭니다.</p>}
-      <AgentNote summary={s} exampleKey={cur.key} showDrafts={p.delayH >= 0.05} />
-      <h3 style={{ marginTop: 20 }}>항차 후 기록</h3>
+    <div className="agent-draft">
+      {p.delayH < 0.05 && <p className="notice">늦춤이 없는 권고라 지시문·요청서 대신 설명만 만듭니다.</p>}
+      <AgentNote summary={s} exampleKey={cur.key} showDrafts={p.delayH >= 0.05} presentation="cards" onSettle={() => dispatch({ type: 'agentTab', tab: 'settle' })} />
+      <section className="panel agent-history">
+      <CardHead title="항차 후 기록" />
       <p className="small muted">실제 접안 시각이 신고되면 예측과 비교해 남기고, 항차별 절감 실적을 쌓습니다.</p>
+      <div className="agent-table-scroll">
       <table className="data-table small num">
         <thead>
-          <tr><th>항차</th><th>권고 도착</th><th>실제 접안</th><th>예측 P50 대비</th></tr>
+          <tr><th>항차</th><th>권고 도착</th><th>실제 접안</th><th>예측 P50 대비</th><th>정박지 대기</th><th>절감 연료</th></tr>
         </thead>
         <tbody>
-          <tr><td>{s.vessel || '직접 입력 선박'} · {s.berth}</td><td>{fmtDT(p.rta)}</td><td>기록 대기</td><td>-</td></tr>
+          <tr><td>{s.vessel || '직접 입력 선박'} · {s.berth}</td><td>{fmtDT(p.rta)}</td><td>기록 대기</td><td>—</td><td>—</td><td>{p.fuelT.toFixed(1)}t (예상)</td></tr>
         </tbody>
       </table>
-    </section>
+      </div>
+      <p className="small muted">실제 접안과 절감 실적은 신고 기록이 확인된 뒤에 표시합니다.</p>
+      </section>
+    </div>
   )
 }
 
