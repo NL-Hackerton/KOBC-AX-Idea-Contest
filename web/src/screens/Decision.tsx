@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getPortState, hasServer, postDecision, replayCase, replayIndex, savedDecision, snapshotMeta } from '../api'
 import BerthFanChart from '../components/BerthFanChart'
+import { IconClock, IconFuel, IconGauge, IconLeaf } from '../components/Icons'
+import KpiCard from '../components/KpiCard'
+import PageHeader from '../components/PageHeader'
 import QueuePanel from '../components/QueuePanel'
 import RecommendationCard from '../components/RecommendationCard'
 import RevealPanel from '../components/RevealPanel'
 import Segmented from '../components/Segmented'
+import { sharedWindow } from '../lib/axis'
 import { fromLive, fromReplay } from '../lib/summary'
-import { addHours, fmtDT, fromLocalInput, toLocalInput } from '../lib/time'
+import { addHours, fmtDT, fromLocalInput, ms, toLocalInput } from '../lib/time'
 import type { Action, AppState } from '../state'
-import type { Condition, DecisionSummary, Inbound, LiveDecision, PortState, ReplayCase, Risk } from '../types'
+import type { Condition, DecisionSummary, Inbound, LiveDecision, Policy, PortState, QueueMember, ReplayCase, Risk } from '../types'
 
 const PORTS = ['울산', '대산', '광양', '여천']
 const GROUPS = ['탱커·가스', '벌크', '일반화물', '컨테이너', '자동차운반', '기타']
@@ -25,22 +29,21 @@ const RISK_OPTS: { value: Risk; label: string; hint: string }[] = [
 ]
 
 export default function Decision({ state, dispatch }: { state: AppState; dispatch: (a: Action) => void }) {
-  return (
-    <div className="screen decision">
-      <div className="toolbar">
-        <Segmented
-          label="모드"
-          value={state.mode}
-          options={[
-            { value: 'replay', label: '재생', hint: '2026-08~09 실제 항차를 결정 시각부터 다시 본다' },
-            { value: 'live', label: '실시간', hint: '지금 공개 데이터로 들어오는 배의 도착을 정한다' },
-          ]}
-          onChange={(m) => dispatch({ type: 'mode', mode: m })}
-        />
-      </div>
-      {state.mode === 'replay' ? <Replay state={state} dispatch={dispatch} /> : <Live state={state} dispatch={dispatch} />}
-    </div>
-  )
+  return <div className="screen decision">{state.mode === 'replay' ? <Replay state={state} dispatch={dispatch} /> : <Live state={state} dispatch={dispatch} />}</div>
+}
+
+function hoursOf(tau: string, iso: string) {
+  return (ms(iso) - ms(tau)) / 3600000
+}
+
+function queueWindow(tau: string, queue: QueueMember[], a0: string, rta: string, quantiles: number[], maxEnd: string) {
+  const pts = [hoursOf(tau, a0), hoursOf(tau, rta), hoursOf(tau, maxEnd), ...quantiles]
+  for (const m of queue) {
+    const start = m.status === 'berthed' && m.elapsedH != null ? -m.elapsedH : m.arrivedAt ? hoursOf(tau, m.arrivedAt) : m.plannedAt ? hoursOf(tau, m.plannedAt) : 0
+    const hi = m.predQ[m.predQ.length - 1] ?? 0
+    pts.push(start, start + hi)
+  }
+  return sharedWindow(tau, pts)
 }
 
 /** 지금 보고 있는 권고를 앱 상태에 남긴다 (에이전트 화면의 문안·정산 계산기가 이어받는다). */
@@ -55,8 +58,8 @@ function useCurrent(dispatch: (a: Action) => void, key: string | null, make: () 
 function Controls({ state, dispatch }: { state: AppState; dispatch: (a: Action) => void }) {
   return (
     <div className="toolbar">
-      <Segmented label="정보 조건" value={state.condition} options={COND_OPTS} onChange={(c) => dispatch({ type: 'condition', condition: c })} />
-      <Segmented label="위험 수준" value={state.risk} options={RISK_OPTS} onChange={(r) => dispatch({ type: 'risk', risk: r })} />
+      <Segmented variant="accent" label="정보 조건" value={state.condition} options={COND_OPTS} onChange={(c) => dispatch({ type: 'condition', condition: c })} />
+      <Segmented variant="accent" label="위험 수준" value={state.risk} options={RISK_OPTS} onChange={(r) => dispatch({ type: 'risk', risk: r })} />
     </div>
   )
 }
@@ -78,98 +81,214 @@ function Replay({ state, dispatch }: { state: AppState; dispatch: (a: Action) =>
   const maxEnd = new Date(addHours(c.a0, c.maxDelayH)).toISOString()
   const summary = fromReplay(c, state.condition, state.risk)
   const exampleKey = `${c.id}|${state.condition}|${state.risk}`
+  const condLabel = COND_OPTS.find((o) => o.value === state.condition)?.label ?? state.condition
   return (
     <>
-      <div className="toolbar picker">
-        <label className="small muted">
-          항만{' '}
-          <select value={port} onChange={(e) => setPort(e.target.value)}>
-            {['전체', ...PORTS].map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-        </label>
-        <label className="small muted grow">
-          항차{' '}
-          <select value={c.id} onChange={(e) => dispatch({ type: 'openReplay', id: e.target.value })}>
-            <optgroup label="대표 사례">
-              {idx.featured.map((f) => {
-                const x = replayCase(f)!
-                return (
-                  <option key={`f-${f}`} value={f}>
-                    {x.port} {x.vessel} → {x.berth} ({fmtDT(x.a0)})
+      <PageHeader
+        title="항차 결정"
+        lede="2026-08-09 실제 항차를 결정 시각부터 다시 봅니다."
+        extra={
+          <label className="case-pick">
+            <span className="sr-only">항차</span>
+            <select value={c.id} onChange={(e) => dispatch({ type: 'openReplay', id: e.target.value })}>
+              <optgroup label="대표 사례">
+                {idx.featured.map((f) => {
+                  const x = replayCase(f)!
+                  return (
+                    <option key={`f-${f}`} value={f}>
+                      {x.port} · {x.vessel} → {x.berth} · {fmtDT(x.a0)} 도착 예정
+                    </option>
+                  )
+                })}
+              </optgroup>
+              <optgroup label={`결정 시각에 선석이 차 있던 항차 (${list.length})`}>
+                {list.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.port} · {x.vessel} → {x.berth} · {fmtDT(x.a0)}
                   </option>
-                )
-              })}
-            </optgroup>
-            <optgroup label={`결정 시각에 선석이 차 있던 항차 (${list.length})`}>
-              {list.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.port} {fmtDT(x.a0)} {x.vessel} → {x.berth}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        </label>
-      </div>
-      <CaseHeader
-        vessel={c.vessel}
-        callsign={c.callsign}
-        kind={c.kind}
-        gt={c.gt}
-        domestic={c.domestic}
-        port={c.port}
-        berth={c.berth}
-        anchorage={c.anchorage}
-        a0={c.a0}
-        tau={c.tau}
-        horizonH={c.horizonH}
+                ))}
+              </optgroup>
+            </select>
+          </label>
+        }
       />
+      <label className="small muted port-filter">
+        항만 필터{' '}
+        <select value={port} onChange={(e) => setPort(e.target.value)}>
+          {['전체', ...PORTS].map((p) => (
+            <option key={p}>{p}</option>
+          ))}
+        </select>
+      </label>
+      <CaseHeader vessel={c.vessel} callsign={c.callsign} kind={c.kind} gt={c.gt} domestic={c.domestic} port={c.port} berth={c.berth} anchorage={c.anchorage} a0={c.a0} tau={c.tau} horizonH={c.horizonH} badge="재생 항차" />
       <Controls state={state} dispatch={dispatch} />
-      <div className="decision-grid">
-        <QueuePanel queue={cond.queue} busy={c.busyAtTau} berth={c.berth} revealed={state.revealed} />
-        <section className="panel chart" aria-label="선석이 비는 시각">
-          <div className="panel-head">
-            <h3>선석이 비는 시각</h3>
-            <button className="link small" onClick={() => setTable(!table)}>
-              {table ? '차트로 보기' : '표로 보기'}
-            </button>
-          </div>
-          <BerthFanChart
-            tau={c.tau}
-            nominal={idx.nominal}
-            quantilesH={cond.quantilesH}
-            busy={c.busyAtTau}
-            a0={c.a0}
-            rta={pol.rta}
-            maxDelayEnd={maxEnd}
-            actualFree={state.revealed ? c.actualFree : null}
-            showTable={table}
-          />
-        </section>
-        <RecommendationCard policies={cond.policies} risk={state.risk} a0={c.a0} designSpeedKn={c.designSpeedKn} busy={summary.busyAtTau} replay summary={summary} exampleKey={exampleKey} />
-      </div>
-      <RevealPanel revealed={state.revealed} onReveal={() => dispatch({ type: 'reveal', revealed: true })} actualFree={c.actualFree} actualWaitH={c.actualWaitH} policy={pol} busy={c.busyAtTau} />
+      <DecisionStage
+        tau={c.tau}
+        queue={cond.queue}
+        busy={c.busyAtTau}
+        berth={c.berth}
+        revealed={state.revealed}
+        a0={c.a0}
+        rta={pol.rta}
+        quantiles={cond.quantilesH}
+        nominal={idx.nominal}
+        maxEnd={maxEnd}
+        actualFree={state.revealed ? c.actualFree : null}
+        table={table}
+        setTable={setTable}
+        vessel={c.vessel}
+        risk={state.risk}
+        policies={cond.policies}
+        designSpeedKn={c.designSpeedKn}
+        replay
+        summary={summary}
+        exampleKey={exampleKey}
+        conditionLabel={condLabel}
+        reveal={<RevealPanel revealed={state.revealed} onReveal={() => dispatch({ type: 'reveal', revealed: true })} actualFree={c.actualFree} actualWaitH={c.actualWaitH} policy={pol} busy={c.busyAtTau} />}
+      />
     </>
   )
 }
 
-function CaseHeader(p: { vessel: string; callsign: string; kind: string; gt: number | null; domestic: boolean; port: string; berth: string; anchorage?: string; a0: string; tau: string; horizonH: number }) {
+function CaseHeader(p: { vessel: string; callsign: string; kind: string; gt: number | null; domestic: boolean; port: string; berth: string; anchorage?: string; a0: string; tau: string; horizonH: number; badge: string }) {
+  const route = p.anchorage ? `${p.port} 정박지 ${p.anchorage} → ${p.berth}` : `${p.port} → ${p.berth}`
   return (
     <header className="case-head">
-      <h2>
-        {p.vessel} <span className="muted small">{p.callsign}</span>
-      </h2>
-      <p className="small muted num">
-        {p.kind}, 총톤수 {p.gt?.toLocaleString('ko-KR') ?? '-'}, {p.domestic ? '내항' : '외항'}
-        {'  '}|{'  '}
-        {p.port} → <strong className="ink">{p.berth}</strong>
-        {p.anchorage ? ` (정박지 ${p.anchorage})` : ''}
-      </p>
-      <p className="small num">
-        도착 예정 <strong>{fmtDT(p.a0)}</strong>, 결정 시각 {fmtDT(p.tau)} ({p.horizonH.toFixed(0)}시간 전)
-      </p>
+      <div className="case-id">
+        <span className="harbor-card-ico" aria-hidden>
+          <IconShipMini />
+        </span>
+        <div>
+          <h2>
+            {p.vessel} <span className="pill">{p.badge}</span>
+          </h2>
+          <p className="small muted num">
+            {p.callsign} · {p.kind} · 총톤수 {p.gt?.toLocaleString('ko-KR') ?? '-'} · {p.domestic ? '내항' : '외항'}
+          </p>
+        </div>
+      </div>
+      <dl className="case-facts num">
+        <div>
+          <dt>항로</dt>
+          <dd>{route}</dd>
+        </div>
+        <div>
+          <dt>도착 예정</dt>
+          <dd>{fmtDT(p.a0)}</dd>
+        </div>
+        <div>
+          <dt>결정 시각</dt>
+          <dd>
+            {fmtDT(p.tau)} <span className="muted">({p.horizonH.toFixed(0)}시간 전)</span>
+          </dd>
+        </div>
+      </dl>
     </header>
+  )
+}
+
+function IconShipMini() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M3 16l2-6h14l2 6M4 16h16l-1.2 3.2a2 2 0 0 1-1.9 1.3H7.1a2 2 0 0 1-1.9-1.3L4 16zM12 10V4" />
+    </svg>
+  )
+}
+
+function DecisionStage(p: {
+  tau: string
+  queue: QueueMember[]
+  busy: boolean
+  berth: string
+  revealed: boolean
+  a0: string
+  rta: string
+  quantiles: number[]
+  nominal: number[]
+  maxEnd: string
+  actualFree?: string | null
+  table: boolean
+  setTable: (v: boolean) => void
+  vessel: string
+  risk: Risk
+  policies: Record<Risk, Policy>
+  designSpeedKn: number
+  replay: boolean
+  summary: DecisionSummary
+  exampleKey: string | null
+  conditionLabel: string
+  loading?: boolean
+  empty?: boolean
+  reveal?: ReactNode
+  note?: ReactNode
+}) {
+  const windowH = queueWindow(p.tau, p.queue, p.a0, p.rta, p.quantiles, p.maxEnd)
+  const pol = p.policies[p.risk]
+  const keep = !p.busy || pol.delayH < 0.05
+  return (
+    <>
+      <div className="kpi-row">
+        <KpiCard icon={<IconFuel size={16} />} label="절감 연료" value={pol.fuelT.toFixed(1)} unit="t" sub="설계 속도 대비" loading={p.loading} empty={p.empty} />
+        <KpiCard icon={<IconLeaf size={16} />} label="절감 CO2" value={pol.co2T.toFixed(1)} unit="t" sub="연료 계수 가정" loading={p.loading} empty={p.empty} />
+        <KpiCard icon={<IconClock size={16} />} label="늦출 시간" value={pol.delayH.toFixed(1)} unit="시간" sub={`도착 예정 ${fmtDT(p.a0)} 기준`} loading={p.loading} empty={p.empty} />
+        <KpiCard icon={<IconGauge size={16} />} label="권고 속도" value={pol.speedKn.toFixed(1)} unit="노트" sub={`설계 ${p.designSpeedKn.toFixed(1)}노트`} loading={p.loading} empty={p.empty} />
+      </div>
+      <div className="decision-layout">
+        <div className="decision-main">
+          <QueuePanel
+            queue={p.queue}
+            busy={p.busy}
+            berth={p.berth}
+            revealed={p.revealed}
+            tau={p.tau}
+            windowH={windowH}
+            current={{ vessel: p.vessel, a0: p.a0, rta: keep ? null : p.rta }}
+            loading={p.loading}
+          />
+          <section className="panel chart" aria-label="선석이 비는 시각">
+            <div className="panel-head">
+              <h3>선석이 비는 시각</h3>
+              <button type="button" className="link small" onClick={() => p.setTable(!p.table)}>
+                {p.table ? '차트로 보기' : '표로 보기'}
+              </button>
+            </div>
+            <p className="small muted">이 시각까지 선석이 빌 확률. 20–80% 구간 {fmtDT(p.a0)} 전후, 중앙은 분포의 P50.</p>
+            <div className="chart-pad">
+              <BerthFanChart
+                tau={p.tau}
+                nominal={p.nominal}
+                quantilesH={p.quantiles}
+                busy={p.busy}
+                a0={p.a0}
+                rta={p.rta}
+                maxDelayEnd={p.maxEnd}
+                actualFree={p.actualFree}
+                showTable={p.table}
+                windowH={windowH}
+                riskLabel={`P${Math.round(Number(p.risk) * 100)}`}
+              />
+            </div>
+          </section>
+        </div>
+        <div className="rec-col">
+          <RecommendationCard
+            policies={p.policies}
+            risk={p.risk}
+            a0={p.a0}
+            designSpeedKn={p.designSpeedKn}
+            busy={p.summary.busyAtTau}
+            replay={p.replay}
+            summary={p.summary}
+            exampleKey={p.exampleKey}
+            conditionLabel={p.conditionLabel}
+            loading={p.loading}
+            empty={p.empty}
+          />
+          {p.reveal}
+          {p.note}
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -249,39 +368,46 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
   const d = results[`${sig}|${state.condition}`]
   useCurrent(dispatch, d ? `live|${sig}|${state.condition}|${state.risk}` : null, () => (d ? fromLive(d, state.risk, port, form.vessel, form.group, form.gt) : null))
   const inbound = ps?.inbound.filter((i) => i.targetKey) ?? []
+  const condLabel = COND_OPTS.find((o) => o.value === state.condition)?.label ?? state.condition
   return (
     <>
-      <div className="toolbar picker">
-        <label className="small muted">
-          항만{' '}
-          <select value={port} onChange={(e) => dispatch({ type: 'openLive', port: e.target.value })}>
-            {PORTS.map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-        </label>
-        <label className="small muted grow">
-          입항 예정 선박 (예측 대상 선석으로 신고된 배 {inbound.length}척){' '}
-          <select
-            value={pick}
-            onChange={(e) => {
-              const i = inbound.find((x) => x.id === e.target.value)
-              if (i && ps) choose(i, ps)
-              else {
-                setPick('')
-                setForm((f) => ({ ...f, vessel: '', callsign: '' }))
-              }
-            }}
-          >
-            <option value="">직접 입력</option>
-            {inbound.map((i) => (
-              <option key={i.id} value={i.id}>
-                {fmtDT(i.eta)} {i.vessel} → {berthName(i.targetKey, ps!)} ({i.source === 'pre' ? '사전 신고' : '최종 신고'})
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <PageHeader
+        title="항차 결정"
+        lede="지금 공개 데이터로 들어오는 배의 도착 시각을 정합니다."
+        extra={
+          <div className="case-picks">
+            <label className="case-pick">
+              <span className="sr-only">항만</span>
+              <select value={port} onChange={(e) => dispatch({ type: 'openLive', port: e.target.value })}>
+                {PORTS.map((p) => (
+                  <option key={p}>{p}</option>
+                ))}
+              </select>
+            </label>
+            <label className="case-pick">
+              <span className="sr-only">입항 예정 선박</span>
+              <select
+                value={pick}
+                onChange={(e) => {
+                  const i = inbound.find((x) => x.id === e.target.value)
+                  if (i && ps) choose(i, ps)
+                  else {
+                    setPick('')
+                    setForm((f) => ({ ...f, vessel: '', callsign: '' }))
+                  }
+                }}
+              >
+                <option value="">직접 입력</option>
+                {inbound.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {port} · {i.vessel} → {berthName(i.targetKey, ps!)} · {fmtDT(i.eta)} {i.source === 'pre' ? '사전 신고' : '최종 신고'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        }
+      />
       {!hasServer() && (
         <p className="notice small">
           이 배포본은 {snapshotMeta.snapshotDate ? fmtDT(snapshotMeta.snapshotDate) : '저장본'} 기준 공개 데이터로 고정되어 있습니다. 입항 예정 목록의 배는 그 시각에 엔진으로 미리 계산한 권고를 보여주고, 직접 입력한 항차는 서버를 실행하면 계산합니다.
@@ -339,34 +465,41 @@ function Live({ state, dispatch }: { state: AppState; dispatch: (a: Action) => v
       {err && <p className="notice error">{err}</p>}
       {d && (
         <>
-          <CaseHeader vessel={form.vessel || '직접 입력 선박'} callsign={form.callsign} kind={form.group} gt={form.gt} domestic={form.domestic} port={port} berth={d.berth} a0={d.a0} tau={d.tau} horizonH={d.horizonH} />
+          <CaseHeader vessel={form.vessel || '직접 입력 선박'} callsign={form.callsign} kind={form.group} gt={form.gt} domestic={form.domestic} port={port} berth={d.berth} a0={d.a0} tau={d.tau} horizonH={d.horizonH} badge={pick ? '사전 신고' : '직접 입력'} />
           <Controls state={state} dispatch={dispatch} />
-          <div className="decision-grid">
-            <QueuePanel queue={d.queue} busy={d.busyAtTau} berth={d.berth} revealed={false} />
-            <section className="panel chart" aria-label="선석이 비는 시각">
-              <div className="panel-head">
-                <h3>선석이 비는 시각</h3>
-                <button className="link small" onClick={() => setTable(!table)}>
-                  {table ? '차트로 보기' : '표로 보기'}
-                </button>
-              </div>
-              <BerthFanChart
-                tau={d.tau}
-                nominal={replayIndex()?.nominal ?? []}
-                quantilesH={d.quantilesH}
-                busy={d.busyAtTau}
-                a0={d.a0}
-                rta={d.policies[state.risk].rta}
-                maxDelayEnd={new Date(addHours(d.a0, d.maxDelayH)).toISOString()}
-                showTable={table}
-              />
-            </section>
-            <RecommendationCard policies={d.policies} risk={state.risk} a0={d.a0} designSpeedKn={d.designSpeedKn} busy={d.busyAtTau} replay={false} summary={fromLive(d, state.risk, port, form.vessel, form.group, form.gt)} exampleKey={null} />
-          </div>
-          <p className="small muted live-note">
-            {fmtDT(d.tau)} 공개 데이터 기준 권고입니다. 선석 상황이 바뀌면 다시 계산하세요. 실제 결과는 항차가 끝난 뒤 이 시스템의 수집 데이터로 확인할 수 있습니다.
-          </p>
+          <DecisionStage
+            tau={d.tau}
+            queue={d.queue}
+            busy={d.busyAtTau}
+            berth={d.berth}
+            revealed={false}
+            a0={d.a0}
+            rta={d.policies[state.risk].rta}
+            quantiles={d.quantilesH}
+            nominal={replayIndex()?.nominal ?? []}
+            maxEnd={new Date(addHours(d.a0, d.maxDelayH)).toISOString()}
+            table={table}
+            setTable={setTable}
+            vessel={form.vessel || '직접 입력 선박'}
+            risk={state.risk}
+            policies={d.policies}
+            designSpeedKn={d.designSpeedKn}
+            replay={false}
+            summary={fromLive(d, state.risk, port, form.vessel, form.group, form.gt)}
+            exampleKey={null}
+            conditionLabel={condLabel}
+            note={
+              <p className="panel small live-note">
+                {fmtDT(d.tau)} 공개 데이터 기준 권고입니다. 선석 상황이 바뀌면 다시 계산하세요. 실제 결과는 항차가 끝난 뒤 이 시스템의 수집 데이터로 확인할 수 있습니다.
+              </p>
+            }
+          />
         </>
+      )}
+      {!d && (busy || (form.berth && form.eta && !err)) && (
+        <p className="muted small" aria-live="polite">
+          권고를 계산하는 중입니다.
+        </p>
       )}
     </>
   )

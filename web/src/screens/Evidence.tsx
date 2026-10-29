@@ -1,6 +1,7 @@
 import { scaleLinear } from 'd3-scale'
 import { useEffect, useState } from 'react'
 import { getEvidence } from '../api'
+import PageHeader from '../components/PageHeader'
 import { useWidth } from '../lib/useWidth'
 
 interface Ev {
@@ -23,11 +24,37 @@ export default function Evidence() {
   if (!ev) return <p className="muted">근거를 불러오는 중</p>
   const main = ev.wait.summary.filter((r) => ['대산', '울산', '광양', '여천'].includes(String(r['항만'])))
   const rest = ev.wait.summary.filter((r) => !main.includes(r))
+  const base = ev.forecast.metrics.find((m) => String(m['모델']).includes('기준선'))
+  const cqr = ev.forecast.metrics.find((m) => String(m['모델']).includes('CQR'))
+  const gbm = ev.forecast.metrics.find((m) => String(m['모델']) === '분위수 GBM')
   return (
     <div className="screen evidence">
-      <p className="lead">
-        K-JIT의 숫자는 모두 아래 실측에서 나옵니다. {ev.data.source}의 {ev.data.period} 기록 {ev.data.calls.toLocaleString('ko-KR')}항차({ev.data.ports}개 항만)를 썼습니다.
-      </p>
+      <PageHeader
+        title="근거"
+        lede={`K-JIT의 숫자는 모두 아래 실측에서 나옵니다. ${ev.data.source}의 ${ev.data.period} 기록 ${ev.data.calls.toLocaleString('ko-KR')}항차(${ev.data.ports}개 항만)를 썼습니다.`}
+        extra={<span className="pill pill-live">시험 구간 2026-08-09</span>}
+      />
+      {base && cqr && (
+        <div className="kpi-row kpi-3">
+          <article className="kpi">
+            <p className="kpi-label">MAE 개선</p>
+            <p className="kpi-value num">
+              {fmt(base['MAE(중앙값) h'], 2)} → {fmt(cqr['MAE(중앙값) h'], 2)} <span className="kpi-unit">시간</span>
+            </p>
+            <p className="kpi-sub">기준선 H 대비 분위수 GBM</p>
+          </article>
+          <article className="kpi">
+            <p className="kpi-label">80% 구간 적중률 (CQR)</p>
+            <p className="kpi-value num">{(Number(cqr['80% 구간 적중률']) * 100).toFixed(1)}%</p>
+            <p className="kpi-sub">재보정 뒤 시험 구간</p>
+          </article>
+          <article className="kpi">
+            <p className="kpi-label">실제 위치 검증</p>
+            <p className="kpi-value num">{ev.validation.positions.toLocaleString('ko-KR')}</p>
+            <p className="kpi-sub">울산 위치 {ev.validation.ships.toLocaleString('ko-KR')}척</p>
+          </article>
+        </div>
+      )}
 
       <section className="panel">
         <h3>1. 정박지에서 선석을 기다린 시간</h3>
@@ -64,6 +91,17 @@ export default function Evidence() {
         <p className="small muted">
           학습 {ev.forecast.split.train}, 보정 {ev.forecast.split.calib}, 시험 {ev.forecast.split.test}. 시험 구간 지표입니다.
         </p>
+        <div className="cov-bars" aria-label="정보 조건별 80% 구간 적중률">
+          {Object.entries(ev.backtest.coverage80).map(([k, v]) => (
+            <div key={k} className="cov-row">
+              <span>{COND_LABEL[k]}</span>
+              <span className="cov-track"><span style={{ width: `${Math.round(v['재보정'] * 100)}%` }} /></span>
+              <span className="num">{v['재보정'].toFixed(3)}</span>
+            </div>
+          ))}
+          <p className="small muted">막대는 재보정 뒤 80% 구간 적중률. 아래 표의 MAE와 함께 읽습니다.</p>
+        </div>
+        {gbm && <p className="small muted">분위수 GBM MAE {fmt(gbm['MAE(중앙값) h'], 2)}시간, pinball {fmt(gbm['pinball 평균'], 2)}.</p>}
         <table className="data-table small num">
           <thead>
             <tr>

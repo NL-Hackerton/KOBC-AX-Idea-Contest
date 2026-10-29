@@ -1,6 +1,7 @@
 import { scaleLinear } from 'd3-scale'
 import { useEffect, useMemo, useState } from 'react'
 import { getCiiConstants } from '../api'
+import PageHeader from '../components/PageHeader'
 import { useWidth } from '../lib/useWidth'
 
 interface Seg {
@@ -20,7 +21,7 @@ interface Consts {
 }
 
 const GRADES = ['A', 'B', 'C', 'D', 'E']
-const ZONE = ['#cde2fb', '#e6eef8', '#f0efec', '#f8e1df', '#f1c4c2']
+const ZONE = ['var(--grade-a)', 'var(--grade-b)', 'var(--grade-c)', 'var(--grade-d)', 'var(--grade-e)']
 
 function seg(c: Consts, type: string, cap: number): Seg {
   return c.types[type].find((s) => cap >= s.min && (s.max == null || cap < s.max)) ?? c.types[type][0]
@@ -53,9 +54,15 @@ export default function Cii() {
 
   if (!c || !calc) return <p className="muted">CII 상수를 불러오는 중</p>
   const num = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: Number(e.target.value) })
+  const improved = calc.rows.filter((r) => GRADES.indexOf(r.gBefore) - GRADES.indexOf(r.gAfter) > 0)
+  const drop = calc.before > 0 ? ((calc.before - calc.after) / calc.before) * 100 : 0
   return (
     <div className="screen cii">
-      <p className="lead">정박지에서 기다리며 쓴 연료를 빼면 연간 CII 등급이 어떻게 바뀌는지 계산합니다. 대기 중에는 항해거리가 늘지 않으므로 대기 연료가 그대로 CII를 높입니다.</p>
+      <PageHeader
+        title="CII 등급 계산"
+        lede="정박지에서 기다리며 쓴 연료를 빼면 연간 CII 등급이 어떻게 바뀌는지 계산합니다. 대기 중에는 항해거리가 늘지 않으므로 대기 연료가 그대로 CII를 높입니다."
+        extra={<span className="pill">IMO MEPC.400(83) 감독률</span>}
+      />
       <div className="cii-grid">
         <section className="panel">
           <h3>선박과 연간 운항 (예시값)</h3>
@@ -97,6 +104,19 @@ export default function Cii() {
               <input type="number" min={0} step={0.5} value={f.anchorPerDay} onChange={num('anchorPerDay')} />
             </label>
           </div>
+          <div className="cii-results num">
+            <div>
+              <p className="small muted">줄어드는 연료</p>
+              <p className="cii-big">{calc.saved.toFixed(0)} <span>톤</span></p>
+              <p className="small muted">CO2 {(calc.saved * (c.cf[f.fuelType] ?? 0)).toFixed(0)}톤</p>
+            </div>
+            <div>
+              <p className="small muted">연간 CII</p>
+              <p className="cii-big">{calc.before.toFixed(2)} → {calc.after.toFixed(2)}</p>
+              <p className="small good-text">{drop.toFixed(1)}% 낮아짐</p>
+            </div>
+          </div>
+          {improved.length > 0 && <p className="banner">{improved.map((r) => r.year).join('년과 ')}년에 등급이 오릅니다.</p>}
           <p className="small muted">
             대기를 없애면 연료 {calc.saved.toFixed(0)}톤이 줄고 항해거리는 그대로라고 단순 가정합니다. 실제로는 감속 항해 연료가 함께 바뀝니다.
           </p>

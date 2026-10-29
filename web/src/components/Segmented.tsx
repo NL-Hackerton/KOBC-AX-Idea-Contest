@@ -4,10 +4,10 @@ interface Opt<T extends string> {
   hint?: string
 }
 
-export default function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: Opt<T>[]; onChange: (v: T) => void }) {
+export default function Segmented<T extends string>({ label, value, options, onChange, variant = 'soft' }: { label: string; value: T; options: Opt<T>[]; onChange: (v: T) => void; variant?: 'soft' | 'accent' }) {
   const current = options.find((o) => o.value === value)
   return (
-    <div className="seg-wrap">
+    <div className={`seg-wrap${variant === 'accent' ? ' seg-accent' : ''}`}>
       <span className="seg-label small muted">{label}</span>
       <div className="seg" role="radiogroup" aria-label={label}>
         {options.map((o) => (

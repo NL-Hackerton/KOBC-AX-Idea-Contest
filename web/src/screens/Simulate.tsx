@@ -1,6 +1,9 @@
 import { scaleLinear } from 'd3-scale'
 import { useEffect, useState } from 'react'
 import { getSimGrid, hasServer, postSimulate } from '../api'
+import { IconClock, IconFuel, IconGauge } from '../components/Icons'
+import KpiCard from '../components/KpiCard'
+import PageHeader from '../components/PageHeader'
 import Segmented from '../components/Segmented'
 import { useWidth } from '../lib/useWidth'
 import type { Condition } from '../types'
@@ -39,9 +42,9 @@ interface Grid {
 
 const PORTS = ['전체', '울산', '대산', '광양', '여천']
 const COND: { value: Condition; label: string; color: string }[] = [
-  { value: 'public', label: '공개 데이터만', color: '#86b6ef' },
-  { value: 'lineup', label: '대기 순번 공유', color: '#3987e5' },
-  { value: 'plan', label: '선석계획 공유', color: '#1c5cab' },
+  { value: 'public', label: '공개 데이터만', color: 'var(--c-public)' },
+  { value: 'lineup', label: '대기 순번 공유', color: 'var(--c-lineup)' },
+  { value: 'plan', label: '선석계획 공유', color: 'var(--c-plan)' },
 ]
 const RISKS = [0.1, 0.2, 0.3, 0.5]
 
@@ -84,9 +87,12 @@ export default function Simulate() {
 
   return (
     <div className="screen simulate">
-      <p className="lead">
-        지난 기록 전체에 K-JIT 권고를 적용하면 무엇이 달라지는지 계산합니다. 정박지를 거쳐 선석에 들어간 화물선 항차마다, 결정 시각에 알 수 있었던 정보만으로 도착 시각을 정합니다.
-      </p>
+      <PageHeader
+        title="항만 시뮬레이터"
+        lede="지난 기록 전체에 K-JIT 권고를 적용하면 무엇이 달라지는지 계산합니다. 정박지를 거쳐 선석에 들어간 화물선 항차마다, 결정 시각에 알 수 있었던 정보만으로 도착 시각을 정합니다."
+        extra={res?.outOfSample ? <span className="pill pill-live">표본 밖 · 2026-08-09</span> : <span className="pill">학습 기간 포함</span>}
+      />
+      <div className="panel filter-card">
       <div className="toolbar">
         <Segmented label="항만" value={port} options={PORTS.map((p) => ({ value: p, label: p, hint: p === '전체' ? '9개 항만 기록 전체 (예측 대상 선석)' : undefined }))} onChange={setPort} />
         <Segmented
@@ -108,15 +114,16 @@ export default function Simulate() {
           <span className="small muted">{onGrid ? '미리 계산한 값' : hasServer() ? (pending ? '서버에서 계산 중' : '서버 계산') : '배포본은 25% 단위로 미리 계산'}</span>
         </label>
       </div>
+      </div>
 
       {res ? (
         <>
-          <div className="stat-row num">
-            <Stat label="절감 연료" value={`${res.fuelT.toLocaleString('ko-KR')} t`} sub={`CO2 ${res.co2T.toLocaleString('ko-KR')} t`} />
-            <Stat label="완전 정보 상한 대비" value={`${res.shareOfUpper.toFixed(0)}%`} sub={`상한 연료 ${res.upperFuelT.toLocaleString('ko-KR')} t`} />
-            <Stat label="정박지 대기" value={`${Math.round(res.waitNowH).toLocaleString('ko-KR')} → ${Math.round(res.residualWaitH).toLocaleString('ko-KR')}시간`} sub={`감속으로 바꾼 시간 ${Math.round(res.delayH).toLocaleString('ko-KR')}시간`} />
-            <Stat label="늦게 도착해 생긴 선석 유휴" value={`${res.extraIdleH.toFixed(0)}시간`} sub={`2시간 넘게 늦은 항차 ${res.lateOver2h}건`} />
-            <Stat label="선석 이용률" value={`${res.utilBefore.toFixed(1)}% → ${res.utilAfter.toFixed(1)}%`} sub={`단일 접안 선석 ${res.berths}곳`} />
+          <div className="kpi-row kpi-5">
+            <KpiCard icon={<IconFuel size={16} />} label="절감 연료" value={res.fuelT.toLocaleString('ko-KR', { maximumFractionDigits: 1 })} unit="t" sub={`CO2 ${res.co2T.toLocaleString('ko-KR', { maximumFractionDigits: 1 })} t`} />
+            <KpiCard label="완전 정보 상한 대비" value={`${res.shareOfUpper.toFixed(0)}%`} sub={`상한 연료 ${res.upperFuelT.toLocaleString('ko-KR', { maximumFractionDigits: 1 })} t`} />
+            <KpiCard icon={<IconClock size={16} />} label="정박지 대기" value={`${Math.round(res.waitNowH).toLocaleString('ko-KR')} → ${Math.round(res.residualWaitH).toLocaleString('ko-KR')}`} unit="시간" sub={`감속으로 바꾼 시간 ${Math.round(res.delayH).toLocaleString('ko-KR')}시간`} />
+            <KpiCard label="늦게 도착해 생긴 선석 유휴" value={res.extraIdleH.toFixed(0)} unit="시간" sub={`2시간 넘게 늦은 항차 ${res.lateOver2h}건`} />
+            <KpiCard icon={<IconGauge size={16} />} label="선석 이용률" value={`${res.utilBefore.toFixed(1)}% → ${res.utilAfter.toFixed(1)}%`} sub={`단일 접안 선석 ${res.berths}곳`} />
           </div>
           <p className="small muted">
             {ps}~{pe} 정박지→선석 화물선 {res.cases.toLocaleString('ko-KR')}항차 중 {res.participants.toLocaleString('ko-KR')}항차 참여. {res.outOfSample ? '표본 밖 기간입니다.' : '학습·보정 기간이 섞여 있어 표본 밖 기간보다 낙관적일 수 있습니다.'} 한 배가 늦게 와서 다음 배가 당겨지는 상호작용은 반영하지 않았습니다.
@@ -164,16 +171,6 @@ export default function Simulate() {
       ) : (
         <p className="muted">{pending ? '계산 중' : '이 조합의 결과가 없습니다.'}</p>
       )}
-    </div>
-  )
-}
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="stat">
-      <p className="small muted">{label}</p>
-      <p className="stat-v">{value}</p>
-      {sub && <p className="small muted">{sub}</p>}
     </div>
   )
 }
@@ -274,7 +271,7 @@ function Hist({ h }: { h: { edges: number[]; counts: number[] } }) {
           const top = y(c)
           return (
             <g key={i}>
-              {c > 0 && <path d={`M${x},${y(0)} V${top + 4} q0,-4 4,-4 h${barW - 8} q4,0 4,4 V${y(0)} Z`} fill="var(--rta)" opacity={0.85} />}
+              {c > 0 && <path d={`M${x},${y(0)} V${top + 4} q0,-4 4,-4 h${barW - 8} q4,0 4,4 V${y(0)} Z`} fill="var(--hist)" opacity={0.9} />}
               <text className="bar-v" x={x + barW / 2} y={top - 4} textAnchor="middle">
                 {c}
               </text>

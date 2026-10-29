@@ -13,7 +13,7 @@ const CHECKS: Record<'master' | 'charterer', string[]> = {
 type Out = { meta: AgentMeta; offline: boolean; text?: string; ko?: string; en?: string } | { error: string }
 
 /** 권고 설명과 지시문·요청서. 서버가 없으면 저장된 예시(대표 사례)로 보여준다. */
-export default function AgentNote({ summary, exampleKey, showDrafts }: { summary: DecisionSummary; exampleKey: string | null; showDrafts: boolean }) {
+export default function AgentNote({ summary, exampleKey, showDrafts, layout = 'row' }: { summary: DecisionSummary; exampleKey: string | null; showDrafts: boolean; layout?: 'row' | 'stack' }) {
   const sig = JSON.stringify([summary.berth, summary.tau, summary.a0, summary.condition, summary.risk, summary.policy.rta])
   const [open, setOpen] = useState<Kind | null>(null)
   const [cache, setCache] = useState<Record<string, Out>>({})
@@ -44,21 +44,21 @@ export default function AgentNote({ summary, exampleKey, showDrafts }: { summary
 
   const cur = open ? cache[`${sig}|${open}`] : undefined
   return (
-    <div className="agent-note">
+    <div className={`agent-note${layout === 'stack' ? ' stack-actions' : ''}`} onClick={(e) => e.stopPropagation()}>
       <div className="note-actions">
-        <button className="btn" aria-expanded={open === 'explain'} onClick={() => run('explain')}>
-          왜 이 권고인가
-        </button>
         {showDrafts && (
           <>
-            <button className="btn" aria-expanded={open === 'master'} onClick={() => run('master')}>
-              선장 지시문
+            <button type="button" className={layout === 'stack' ? 'btn primary block' : 'btn'} aria-expanded={open === 'master'} onClick={() => run('master')}>
+              {layout === 'stack' && <SendIcon />} 선장 지시문
             </button>
-            <button className="btn" aria-expanded={open === 'charterer'} onClick={() => run('charterer')}>
-              용선자 요청서
+            <button type="button" className={layout === 'stack' ? 'btn block' : 'btn'} aria-expanded={open === 'charterer'} onClick={() => run('charterer')}>
+              {layout === 'stack' && <DocIcon />} 용선자 요청서
             </button>
           </>
         )}
+        <button type="button" className={layout === 'stack' ? 'link explain-link' : 'btn'} aria-expanded={open === 'explain'} onClick={() => run('explain')}>
+          {layout === 'stack' && <InfoIcon />} 왜 이 권고인가
+        </button>
       </div>
       {open && (busy && !cur ? <p className="small muted">만드는 중</p> : null)}
       {open && cur && ('error' in cur ? <p className="notice small">{cur.error}</p> : (
@@ -97,5 +97,28 @@ export default function AgentNote({ summary, exampleKey, showDrafts }: { summary
         </div>
       ))}
     </div>
+  )
+}
+
+function SendIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M4 12l16-7-6 16-2.5-6.5L4 12z" />
+    </svg>
+  )
+}
+function DocIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M7 3h7l5 5v13H7zM14 3v6h6" />
+    </svg>
+  )
+}
+function InfoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
   )
 }

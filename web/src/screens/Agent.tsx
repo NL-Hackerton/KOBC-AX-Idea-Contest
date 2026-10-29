@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { agentExamples, hasServer, postAgent, read } from '../api'
 import AgentNote from '../components/AgentNote'
 import GenBadge from '../components/GenBadge'
+import PageHeader from '../components/PageHeader'
 import Segmented from '../components/Segmented'
 import { fmtDT } from '../lib/time'
 import type { Action, AgentTab, AppState } from '../state'
@@ -27,10 +28,12 @@ export default function Agent({ state, dispatch }: { state: AppState; dispatch: 
   useEffect(() => {
     read<Status | null>('/api/agent/status', () => null).then(setSt)
   }, [])
+  const tab = TABS.find((t) => t.value === state.agentTab)
   return (
     <div className="screen agent">
+      <PageHeader title="계약·정산·에이전트" lede={tab?.hint} />
       <div className="toolbar">
-        <Segmented label="기능" value={state.agentTab} options={TABS} onChange={(t) => dispatch({ type: 'agentTab', tab: t })} />
+        <Segmented variant="accent" label="기능" value={state.agentTab} options={TABS} onChange={(t) => dispatch({ type: 'agentTab', tab: t })} />
         <p className="small muted agent-status">
           {!st
             ? '배포본: 예시 계약·메일의 분석 결과와 정산 계산기를 쓸 수 있습니다. 직접 붙여 넣은 문서 분석과 질의응답은 서버를 실행하면 동작합니다.'
@@ -152,17 +155,21 @@ function ContractTab() {
             <ol className="clause-list">
               {ok.data.clauses.map((c, i) => (
                 <li key={i} className={focus === i ? 'on' : ''}>
-                  <button
-                    className="clause-head"
-                    onClick={() => {
-                      setFocus(i)
-                      marks.current[i]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-                    }}
-                  >
-                    <span className="chip">{c.label}</span>
-                    <span className="small muted clip">{c.quote.split('\n')[0]}</span>
-                  </button>
-                  <p className="small">{c.note}</p>
+                  <span className="clause-no">{i + 1}</span>
+                  <div>
+                    <button
+                      type="button"
+                      className="clause-head"
+                      onClick={() => {
+                        setFocus(i)
+                        marks.current[i]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+                      }}
+                    >
+                      <span className="chip">{c.label}</span>
+                      <span className="small muted clip">{c.quote.split('\n')[0]}</span>
+                    </button>
+                    <p className="small">{c.note}</p>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -311,6 +318,7 @@ function SettleTab({ state }: { state: AppState }) {
   const charterer = (f.payer === 'charterer' ? fuelUsd : 0) + demShift
   const breakEven = f.onDem && f.delayH > 0 && f.rate > 0 ? (fuelUsd * 24) / (f.rate * f.delayH) : null
   const usd = (v: number) => `${v < 0 ? '−' : v > 0 ? '+' : ''}$${Math.abs(Math.round(v)).toLocaleString('en-US')}`
+  const moneyClass = (v: number) => (Math.round(v) > 0 ? 'money-pos' : Math.round(v) < 0 ? 'money-neg' : '')
   return (
     <div className="agent-grid">
       <section className="panel">
@@ -370,21 +378,21 @@ function SettleTab({ state }: { state: AppState }) {
           <tbody>
             <tr>
               <td>연료비 절감</td>
-              <td>{usd(f.payer === 'owner' ? fuelUsd : 0)}</td>
-              <td>{usd(f.payer === 'charterer' ? fuelUsd : 0)}</td>
-              <td>{usd(fuelUsd)}</td>
+              <td className={moneyClass(f.payer === 'owner' ? fuelUsd : 0)}>{usd(f.payer === 'owner' ? fuelUsd : 0)}</td>
+              <td className={moneyClass(f.payer === 'charterer' ? fuelUsd : 0)}>{usd(f.payer === 'charterer' ? fuelUsd : 0)}</td>
+              <td className={moneyClass(fuelUsd)}>{usd(fuelUsd)}</td>
             </tr>
             <tr>
               <td>체선료</td>
-              <td>{usd(-demShift)}</td>
-              <td>{usd(demShift)}</td>
-              <td>{usd(0)}</td>
+              <td className={moneyClass(-demShift)}>{usd(-demShift)}</td>
+              <td className={moneyClass(demShift)}>{usd(demShift)}</td>
+              <td className={moneyClass(0)}>{usd(0)}</td>
             </tr>
             <tr className="total">
               <td>합계</td>
-              <td>{usd(owner)}</td>
-              <td>{usd(charterer)}</td>
-              <td>{usd(fuelUsd)}</td>
+              <td className={moneyClass(owner)}>{usd(owner)}</td>
+              <td className={moneyClass(charterer)}>{usd(charterer)}</td>
+              <td className={moneyClass(fuelUsd)}>{usd(fuelUsd)}</td>
             </tr>
           </tbody>
         </table>
@@ -396,7 +404,14 @@ function SettleTab({ state }: { state: AppState }) {
             : `연료비를 내는 용선자가 ${usd(charterer)} 이득입니다. 선주는 체선료 감액만큼 ${usd(owner)} 변합니다.`}
         </p>
         {breakEven != null && f.payer === 'owner' && (
-          <p className="small muted">선주가 손해 보지 않는 최대 감액: {Math.min(100, breakEven * 100).toFixed(0)}%. 체선료는 둘 사이를 옮겨 갈 뿐이라 합계는 연료비 절감과 같습니다.</p>
+          <div className="even-bar">
+            <p className="small">선주가 손해 보지 않는 최대 감액</p>
+            <div className="even-track" aria-hidden>
+              <span style={{ width: `${Math.min(100, Math.max(0, breakEven * 100))}%` }} />
+            </div>
+            <strong className="num">{Math.min(100, breakEven * 100).toFixed(0)}%</strong>
+            <p className="small muted">체선료는 둘 사이를 옮겨 갈 뿐이라 합계는 연료비 절감과 같습니다.</p>
+          </div>
         )}
       </section>
     </div>
