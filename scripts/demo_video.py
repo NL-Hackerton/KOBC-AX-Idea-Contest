@@ -21,8 +21,8 @@ CAPTION_JS = """(t) => {
   if (!d) {
     d = document.createElement('div'); d.id = 'demo-cap'
     Object.assign(d.style, {position: 'fixed', left: '50%', bottom: '28px', transform: 'translateX(-50%)', maxWidth: '1100px',
-      background: 'rgba(23,34,45,.92)', color: '#fff', padding: '12px 20px', borderRadius: '6px', font: '500 20px/1.5 "IBM Plex Sans KR", sans-serif',
-      zIndex: 9999, textAlign: 'center', pointerEvents: 'none'})
+      background: 'rgba(15,27,45,.92)', color: '#fff', padding: '12px 20px', borderRadius: '12px', font: '500 20px/1.5 "Noto Sans KR", sans-serif',
+      zIndex: 9999, textAlign: 'center', pointerEvents: 'none', boxShadow: '0 12px 32px rgba(15,27,45,.25)'})
     document.body.appendChild(d)
   }
   d.textContent = t; d.style.display = t ? 'block' : 'none'
@@ -63,7 +63,8 @@ def busy_berth(api: str, port: str) -> tuple[str, str]:
     import urllib.request
 
     st = json.load(urllib.request.urlopen(f"{api}/api/ports/{urllib.parse.quote(port)}/state", timeout=30))
-    occ = sorted((b for b in st["berths"] if b.get("predQ")), key=lambda b: -(b["predQ"][3] or 0))
+    single = {b["name"] for b in st["singleBerths"]}  # 직접 입력 화면의 목적 선석 목록에 있는 선석만
+    occ = sorted((b for b in st["berths"] if b.get("predQ") and b["berth"] in single), key=lambda b: -(b["predQ"][3] or 0))
     kst = dt.timezone(dt.timedelta(hours=9))
     eta = (dt.datetime.now(kst) + dt.timedelta(hours=18)).replace(minute=0, second=0, microsecond=0)
     return (occ[0]["berth"] if occ else "SK7부두"), eta.strftime("%Y-%m-%dT%H:%M")
@@ -87,7 +88,7 @@ def scenario(page: Page) -> None:
     scroll(page, 700, wait=1)
 
     # 3. 항차 결정 재생 (약 45초)
-    go(page, "#decision/replay/820-2026-001-V7B3580", 2)
+    go(page, "#decision/replay/820-2026-001-V7B3580", 2.5)
     cap(page, "항차 결정(재생): 2026-09 울산 SK7부두에 도착할 탱커를 24시간 전 시점에서 다시 결정해 봅니다.", 5)
     click(page, "radio", "공개 데이터만", 0.5)
     cap(page, "공개 데이터만 쓰면 앞 순번 배가 보이지 않아 선석이 비어 있다고 판단하고, 원래 일정대로 들어갑니다.", 5)
@@ -96,7 +97,8 @@ def scenario(page: Page) -> None:
     cap(page, "위험 수준 0.1: 선석이 이미 비어 있을 확률이 10%인 시각에 맞춰 도착하도록 늦추되, 감속으로 흡수할 수 있는 한도 안에서만 권고합니다.", 7)
     click(page, "button", "왜 이 권고인가", 0.5)
     cap(page, "권고의 이유는 엔진 수치만으로 설명합니다. 선장 지시문과 용선자 요청서도 같은 수치로 만듭니다.", 6)
-    click(page, "button", "실제 결과 보기", 2)
+    scroll(page, 700, wait=0.5)
+    click(page, "button", "실제 결과 열기", 2)
     cap(page, "실제로는 선석이 그보다 훨씬 늦게 비었습니다. 늦춘 만큼 정박지 대기 연료를 감속 항해로 바꿔 아낍니다.", 6)
 
     # 4. 실시간 결정 (약 20초): 지금 차 있는 선석에 내일 도착하는 탱커를 직접 입력한다
@@ -104,17 +106,17 @@ def scenario(page: Page) -> None:
     go(page, "#decision/live/울산", 3)
     cap(page, "실시간 모드: 지금 공개 데이터로 들어오는 배의 도착을 정합니다. 직접 입력도 됩니다.")
     try:
-        picker = page.locator("select").filter(has=page.locator("option", has_text="직접 입력"))
-        page.wait_for_function("() => [...document.querySelectorAll('select')].some(s => s.options.length > 1 && s.options[0].text === '직접 입력')", timeout=20000)
-        page.wait_for_selector(".decision .case-head", timeout=20000)  # 첫 신고 선박의 자동 권고가 끝난 뒤
-        picker.select_option(value="")
+        page.wait_for_selector(".screen.decision .vessel-card", timeout=20000)  # 첫 신고 선박의 자동 권고가 끝난 뒤
+        page.locator(".voyage-picker > summary").click()
+        page.wait_for_timeout(600)
+        page.get_by_role("option", name="직접 입력", exact=True).click()
         page.wait_for_timeout(500)
-        page.get_by_label("선박명").fill("데모 탱커")
-        page.get_by_label("총톤수").fill("30000")
-        page.get_by_label("목적 선석").select_option(label=berth)
-        page.get_by_label("도착 예정 (KST)").fill(eta)
-        # 입력이 끝나면 화면이 스스로 계산한다. 권고 카드가 뜰 때까지 기다린다
-        page.wait_for_selector(".rec .rec-time", timeout=20000)
+        page.get_by_label("선박명", exact=True).fill("데모 탱커")
+        page.get_by_label("총톤수", exact=True).fill("30000")
+        page.get_by_label("목적 선석").select_option(label=berth)  # 라벨 글자에 선택지 글자까지 붙어 exact 로는 못 찾는다
+        page.get_by_label("도착 예정 (KST)", exact=True).fill(eta)
+        click(page, "button", "권고 계산", 0.3)  # 입력만으로도 스스로 계산하므로, 이미 계산 중이면 건너뛴다
+        page.wait_for_function("() => document.querySelector('.screen.decision .vessel-card h2')?.textContent === '데모 탱커'", timeout=20000)
         page.wait_for_timeout(800)
     except Exception as e:
         print("실시간 입력 건너뜀:", str(e)[:100])
@@ -137,12 +139,16 @@ def scenario(page: Page) -> None:
 
     # 7. 계약·정산·에이전트 (약 40초)
     go(page, "#agent/contract", 1.5)
-    click(page, "button", "조항 찾기", 1.5)
+    try:  # 예시 계약은 미리 분석돼 있으므로 JIT 도착 조항을 골라 본문 근거 구간을 보여준다
+        page.locator(".screen.agent mark", has_text="Just in Time").first.click(timeout=3000)
+    except Exception as e:
+        print("건너뜀: JIT 조항", str(e)[:80])
+    page.wait_for_timeout(1500)
     cap(page, "계약: 용선계약에서 JIT 도착, 신속 항해 의무, 체선료 조항을 근거 구간과 함께 찾습니다. (예시 계약은 합성 문안)", 6)
     go(page, "#agent/lineup", 1.5)
-    click(page, "button", "순번 정리", 1.5)
+    click(page, "button", "구조화하기", 1.5)
     cap(page, "대리점의 대기 순번 메일을 표로 정리하고, 그대로 항차 결정의 대기 순번 조건에 넣습니다.", 5)
-    click(page, "button", "항차 결정에 넣기", 4)
+    click(page, "button", "항차 결정에 반영", 4)
     cap(page, "메일에서 온 순번이 대기열에 들어가 권고가 다시 계산됩니다.", 5)
     go(page, "#agent/settle", 1.5)
     cap(page, "정산: 아낀 연료비와 체선료 변화를 선주·용선자별로 나눠, 누가 손해를 보는지와 손익분기 감액률을 보여줍니다.", 6)

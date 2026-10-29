@@ -171,7 +171,7 @@ button.chip-soft:hover { background: var(--band); color: var(--on-band); }
 .seg.boxed { background: var(--surface); border: 1px solid var(--line); padding: 3px; }
 .seg-hint { max-width: 420px; }
 
-select, input[type="text"], input[type="number"], input[type="datetime-local"], input[type="date"], textarea, .doc-input {
+select, input:not([type]), input[type="text"], input[type="number"], input[type="datetime-local"], input[type="date"], textarea, .doc-input {
   border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface); color: var(--ink);
   padding: 10px 12px; font-size: 14px; line-height: 22px; max-width: 100%; transition: border-color .15s, box-shadow .15s;
 }
